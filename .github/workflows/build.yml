@@ -12,7 +12,7 @@ env:
   PUBLIC_NAME: Aethersense Redux Reborn
   SOLUTION_NAME: AethersenseReduxReborn
   INTERNAL_NAME: AethersenseReduxReborn
-  RELEASE_DIR: AethersenseReduxReborn\bin\Release\SomethingNeedDoing
+  RELEASE_DIR: AethersenseReduxReborn\bin\Release\
   PERSONAL_PLUGIN_REPO: Xpahtalo/plugins
 
 jobs:
