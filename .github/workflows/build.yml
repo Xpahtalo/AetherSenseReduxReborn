@@ -61,4 +61,3 @@ jobs:
         author_name: GitHub Action
         author_email: github-actions[bot]@users.noreply.github.com
         message: Update ${{ env.INTERNAL_NAME }}
-#        artifact_path: ${{ steps.download-artifact.outputs.download-path }}
