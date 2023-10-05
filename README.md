@@ -4,7 +4,9 @@ Turn your Warrior of Light into the Warrior of Butt with regex-powered realtime 
 
 ### Installation
 
-Currently requires you to build and install it yourself. 
+Add `https://raw.githubusercontent.com/Xpahtalo/plugins/master/pluginmaster.json` to your 3rd party repo list.
+
+View [TASKS.md](./TASKS.md) for current work that needs to be done to hit an initial release.
 
 ### Credits
 
