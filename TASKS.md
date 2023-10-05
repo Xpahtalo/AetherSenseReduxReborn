@@ -5,3 +5,5 @@
 * All signal groups should start disabled, and when new devices are detected, check the list to see if the attribute they were last assigned to have been added.
     - If so, re-enable the signal group.
 * Having the signal config saved inside the Signal is fucked. Need to adjust this to be less annoying to work with. No ideas yet.
+* Instead of using `Task.Run(async () => await _())` there should be message queue that synchronous code pushes to, and an async loop is watching to pull from.
+    - I'll probably look at MQTTnet for ideas, because that implementation has worked well in ffxiv2mqtt.
