@@ -1,533 +1,67 @@
-﻿using Dalamud.Game.Command;
-using Dalamud.IoC;
-using Dalamud.Plugin;
-using Dalamud.Logging;
-using Dalamud.Game.Gui;
+﻿using AethersenseReduxReborn.Configurations;
+using AethersenseReduxReborn.UserInterface;
+using AethersenseReduxReborn.UserInterface.Windows.MainWindow;
+using Dalamud.Game.Command;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
-
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Diagnostics;
-using System.Threading;
-using AethersenseReduxReborn.Pattern;
-using AethersenseReduxReborn.Trigger;
-using AethersenseReduxReborn.UserInterface;
-using AethersenseReduxReborn.UserInterface.Windows;
-using AethersenseReduxReborn.UserInterface.Windows.MainWindow;
-using Buttplug.Client;
-using Buttplug.Client.Connectors.WebsocketConnector;
+using Dalamud.Plugin;
 
 namespace AethersenseReduxReborn;
 
 // ReSharper disable once ClassNeverInstantiated.Global
-public sealed class Plugin : IDalamudPlugin
+public sealed class Plugin: IDalamudPlugin
 {
-    public string Name => "Aethersense Redux Reborn";
+    private readonly WindowManager               _windowManager;
+    private readonly ButtplugWrapper             _buttplugWrapper;
+    private readonly SignalService               _signalService;
+    private readonly ButtplugServerConfiguration _serverConfiguration;
+    private readonly SignalConfiguration         _signalConfiguration;
+    public           string                      Name => "Aethersense Redux Reborn";
+    private const    string                      CommandName = "/arr";
 
-    private const string CommandName = "/arr";
 
-    private ButtplugStatus _status;
-
-    public ButtplugStatus Status
+    public Plugin(DalamudPluginInterface pluginInterface)
     {
-        get
-        {
-            try {
-                if (_buttplug == null) {
-                    return ButtplugStatus.Uninitialized;
-                }
+        pluginInterface.Create<Service>();
+        Service.CommandManager.AddHandler(CommandName,
+                                          new CommandInfo(OnShowUI) {
+                                                                        HelpMessage = "Opens the Aether Sense Redux configuration window",
+                                                                    });
+        Service.PluginInterface.UiBuilder.Draw         += DrawUi;
+        Service.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUi;
 
-                if (_buttplug.Connected && _status == ButtplugStatus.Connected) {
-                    return ButtplugStatus.Connected;
-                }
+        _serverConfiguration = new ButtplugServerConfiguration();
+        _buttplugWrapper     = new ButtplugWrapper(Name, _serverConfiguration);
+        _signalConfiguration = SignalConfiguration.DefaultConfiguration();
+        _signalService       = new SignalService(_buttplugWrapper, _signalConfiguration);
 
-                if (_status == ButtplugStatus.Connecting) {
-                    return ButtplugStatus.Connecting;
-                }
+        _windowManager = new WindowManager();
+        _windowManager.AddWindow(MainWindow.Name, new MainWindow(_buttplugWrapper, _signalService));
 
-                if (!_buttplug.Connected && _status == ButtplugStatus.Connected) {
-                    return ButtplugStatus.Error;
-                }
-
-                if (_status == ButtplugStatus.Disconnecting) {
-                    return ButtplugStatus.Disconnecting;
-                }
-
-                if (LastException != null) {
-                    return ButtplugStatus.Error;
-                }
-
-                return ButtplugStatus.Disconnected;
-            } catch (Exception ex) {
-                PluginLog.Error(ex, "error when getting status");
-                return ButtplugStatus.Error;
-            }
-
-
-        }
+        Service.ChatGui.ChatMessage+=(      XivChatType type,
+                                            uint senderId,
+                                            ref SeString sender,
+                                            ref SeString message,
+                                            ref bool isHandled)=>Service.PluginLog.Information("Type:{0} SenderId:{1} Sender:{2} Message:{3} IsHandled:{4}", type, senderId, sender, message, isHandled);
+#if DEBUG
+//        _windowManager.ToggleWindow(MainWindow.Name);
+#endif
     }
 
-    private bool Connected => _buttplug is { Connected: true };
 
-    public List<Device> DevicePool
-    {
-        get
-        {
-            lock (_devicePool) {
-                return _devicePool;
-            }
-        }
-    }
-
-    public Exception? LastException { get; private set; }
-
-    public                  WaitType               WaitType        { get; set; }
-    private                 DalamudPluginInterface PluginInterface { get; init; }
-    private                 CommandManager         CommandManager  { get; init; }
-    private                 Configuration          Configuration   { get; set; }
-    [PluginService] private ChatGui                ChatGui         { get; init; } = null!;
-    private                 WindowManager          WindowManager   { get; init; }
-    
-    private ButtplugClient? _buttplug;
-
-    private List<Device> _devicePool;
-
-    private readonly List<ChatTrigger>       _chatTriggerPool;
-    
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="pluginInterface"></param>
-    /// <param name="commandManager"></param>
-    public Plugin(
-        [RequiredVersion("1.0")] DalamudPluginInterface pluginInterface,
-        [RequiredVersion("1.0")] CommandManager         commandManager)
-    {
-        var t = DoBenchmark();
-
-        PluginInterface = pluginInterface;
-        CommandManager  = commandManager;
-
-
-        PluginInterface.Inject(this);
-
-        _devicePool      = new List<Device>();
-        _chatTriggerPool = new List<ChatTrigger>();
-
-        Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
-        Configuration.Initialize(PluginInterface);
-
-        Configuration.FixDeserialization();
-
-        _status = ButtplugStatus.Disconnected;
-
-        if (Configuration.FirstRun) {
-            Configuration.LoadDefaults();
-        }
-
-        WindowManager = new WindowManager();
-        WindowManager.AddWindow(MainWindow.Name, new MainWindow(this, Configuration));
-
-        CommandManager.AddHandler(CommandName, new CommandInfo(OnShowUI)
-                                               {
-                                                   HelpMessage = "Opens the Aether Sense Redux configuration window",
-                                               });
-
-        PluginInterface.UiBuilder.Draw         += DrawUi;
-        PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUi;
-
-        t.Wait();
-        WaitType = t.Result;
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
     public void Dispose()
     {
-        Stop(true);
-        WindowManager.Dispose();
-        CommandManager.RemoveHandler(CommandName);
+        _buttplugWrapper.Dispose();
+        Service.CommandManager.RemoveHandler(CommandName);
     }
 
-#region Event Handlers
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private void OnDeviceAdded(object? sender, DeviceAddedEventArgs e)
-    {
+#region UI Handlers
 
-        PluginLog.Information("Device {0} added", e.Device.Name);
-        Device newDevice = new(e.Device, WaitType);
-        DevicePool.Add(newDevice);
-        
+    private void OnShowUI(string command, string args) { _windowManager.ToggleWindow(MainWindow.Name); }
 
-        if (!Configuration.SeenDevices.Contains(newDevice.Name)) {
-            Configuration.SeenDevices.Add(newDevice.Name);
-        }
+    private void DrawUi() { _windowManager.Draw(); }
 
-        newDevice.Start();
-
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private void OnDeviceRemoved(object? sender, DeviceRemovedEventArgs e)
-    {
-        if (Status != ButtplugStatus.Connected) {
-            return;
-        }
-
-        PluginLog.Information("Device {0} removed", e.Device.Name);
-        var toRemove = new List<Device>();
-        lock (_devicePool) {
-            foreach (var device in _devicePool) {
-                if (device.ClientDevice != e.Device) continue;
-                try {
-                    device.Stop();
-                } catch (Exception ex) {
-                    PluginLog.Error(ex, "Could not stop device {0}, device disconnected?", device.Name);
-                }
-
-                toRemove.Add(device);
-                device.Dispose();
-            }
-        }
-
-        foreach (var device in toRemove) {
-            lock (_devicePool) {
-                _devicePool.Remove(device);
-            }
-
-        }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private void OnScanComplete(object? sender, EventArgs e)
-    {
-        // Do nothing, since Buttplug still keeps scanning for BLE devices even after scanning is "complete"
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="sender"></param>
-    /// <param name="e"></param>
-    private void OnServerDisconnect(object? sender, EventArgs e)
-    {
-        if (Status == ButtplugStatus.Disconnecting) {
-            return;
-        }
-
-        Stop(false);
-        PluginLog.Error("Unexpected disconnect.");
-    }
-
-    private void OnChatReceived(
-        XivChatType  type,
-        uint         senderId,
-        ref SeString sender,
-        ref SeString message,
-        ref bool     isHandled)
-    {
-        ChatMessage chatMessage = new(type, senderId, ref sender, ref message, ref isHandled);
-        foreach (var trigger in _chatTriggerPool) {
-            trigger.Queue(chatMessage);
-        }
-
-        if (Configuration.LogChat) {
-            PluginLog.Debug(chatMessage.ToString());
-        }
-    }
-
-    private void OnShowUI(string command, string args)
-    {
-        WindowManager.OpenWindow(MainWindow.Name);
-    }
+    private void DrawConfigUi() { _windowManager.ToggleWindow(MainWindow.Name); }
 
 #endregion
-
-#region SOME FUNCTIONS THAT DO THINGS
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <param name="patternConfig">A pattern configuration.</param>
-    public void DoPatternTest(dynamic patternConfig)
-    {
-        if (Status != ButtplugStatus.Connected) {
-            return;
-        }
-
-        lock (_devicePool) {
-            foreach (var device in _devicePool) {
-                lock (device.Patterns) {
-                    device.Patterns.Add(PatternFactory.GetPatternFromObject(patternConfig));
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns>The task associated with this method.</returns>
-    private async Task DoScan()
-    {
-        try {
-            await _buttplug!.StartScanningAsync();
-        } catch (Exception ex) {
-            PluginLog.Error(ex, "Asynchronous scanning failed.");
-        }
-    }
-#endregion
-
-#region START AND STOP FUNCTIONS
-    /// <summary>
-    /// 
-    /// </summary>
-    private async Task InitButtplug()
-    {
-        LastException            = null;
-        _status                  = ButtplugStatus.Connecting;
-
-        if (_buttplug == null) {
-            _buttplug                  =  new ButtplugClient("Aethersense Redux Reborn");
-            _buttplug.DeviceAdded      += OnDeviceAdded;
-            _buttplug.DeviceRemoved    += OnDeviceRemoved;
-            _buttplug.ScanningFinished += OnScanComplete;
-            _buttplug.ServerDisconnect += OnServerDisconnect;
-        }
-
-        if (!Connected) {
-            try {
-                var wsOptions = new ButtplugWebsocketConnector(new Uri(Configuration.Address));
-                await _buttplug.ConnectAsync(wsOptions);
-                var t = DoScan();
-            } catch (Exception ex) {
-                PluginLog.Error(ex, "Buttplug failed to connect.");
-                LastException = ex;
-                Stop(false);
-            }
-        }
-
-        if (Connected) {
-            PluginLog.Information("Buttplug connected.");
-            _status = ButtplugStatus.Connected;
-        }
-
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    private void DisconnectButtplug()
-    {
-        if (Status != ButtplugStatus.Connected) 
-            return;
-        _status = ButtplugStatus.Disconnecting;
-        try {
-            var t = _buttplug!.DisconnectAsync();
-            t.Wait();
-            PluginLog.Information("Buttplug disconnected.");
-        } catch (Exception ex) {
-            PluginLog.Error(ex, "Buttplug failed to disconnect.");
-        }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    private void CleanDevices()
-    {
-        lock (_devicePool) {
-            foreach (Device device in _devicePool) {
-                PluginLog.Debug("Stopping device {0}", device.Name);
-                device.Stop();
-                device.Dispose();
-            }
-
-            _devicePool.Clear();
-        }
-
-        PluginLog.Debug("Devices destroyed.");
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    private void CleanButtplug()
-    {
-        if (_buttplug == null) {
-            _status = ButtplugStatus.Disconnected;
-            return;
-        }
-
-        _status = ButtplugStatus.Disconnected;
-        _buttplug.Dispose();
-        _buttplug = null;
-        PluginLog.Debug("Buttplug destroyed.");
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    private void CleanTriggers()
-    {
-        foreach (var t in _chatTriggerPool) {
-            PluginLog.Debug("Stopping chat trigger {0}", t.Name);
-            t.Stop();
-        }
-
-        ChatGui.ChatMessage -= OnChatReceived;
-        _chatTriggerPool.Clear();
-        PluginLog.Debug("Triggers destroyed.");
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    private void InitTriggers()
-    {
-        foreach (var d in Configuration.Triggers) {
-            // We pass DevicePool by reference so that triggers don't get stuck with outdated copies
-            // of the device pool, should it be replaced with a new List<Device> - currently this doesn't
-            // happen but it's possible it may happen in the future.
-            var trigger = TriggerFactory.GetTriggerFromConfig(d, ref _devicePool);
-            if (trigger.Type == "ChatTrigger") {
-                _chatTriggerPool.Add((ChatTrigger)trigger);
-            } else {
-                PluginLog.Error("Invalid trigger type {0} created.", trigger.Type);
-            }
-        }
-
-        foreach (var t in _chatTriggerPool) {
-            PluginLog.Debug("Starting chat trigger {0}", t.Name);
-            t.Start();
-        }
-
-        ChatGui.ChatMessage += OnChatReceived;
-        PluginLog.Debug("Triggers created");
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public void Start()
-    {
-        InitTriggers();
-        Task.Run(InitButtplug);
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public void Reload()
-    {
-        if (Connected) {
-            CleanTriggers();
-            InitTriggers();
-        }
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    public void Stop(bool expected)
-    {
-        CleanTriggers();
-        CleanDevices();
-        if (expected) {
-            DisconnectButtplug();
-        }
-
-        CleanButtplug();
-    }
-#endregion
-
-    private void DrawUi() { WindowManager.Draw(); }
-
-    private void DrawConfigUi() { WindowManager.ToggleWindow(MainWindow.Name); }
-
-    /// <summary>
-    /// 
-    /// </summary>
-    /// <returns></returns>
-    public static async Task<WaitType> DoBenchmark()
-    {
-        var       result   = WaitType.SlowTimer;
-        var       times    = new long[10];
-        var       averages = new double[2];
-        long      sum      = 0;
-        Stopwatch timer    = new();
-        PluginLog.Information("Starting benchmark");
-
-
-        PluginLog.Debug("Testing Task.Delay");
-
-        for (var i = 0; i < times.Length; i++) {
-            timer.Restart();
-            await Task.Delay(1);
-            times[i] = timer.Elapsed.Ticks;
-        }
-
-        foreach (var t in times) {
-            PluginLog.Debug("{0}", t);
-            sum += t;
-        }
-
-        averages[0] = (double)sum / times.Length / 10000;
-        PluginLog.Debug("Average: {0}", averages[0]);
-
-        PluginLog.Debug("Testing Thread.Sleep");
-        times = new long[10];
-        for (var i = 0; i < times.Length; i++) {
-            timer.Restart();
-            Thread.Sleep(1);
-            times[i] = timer.Elapsed.Ticks;
-        }
-
-        sum = 0;
-        foreach (var t in times) {
-            PluginLog.Debug("{0}", t);
-            sum += t;
-        }
-
-        averages[1] = (double)sum / times.Length / 10000;
-        PluginLog.Debug("Average: {0}", averages[1]);
-
-        if (averages[0] < 3) {
-            result = WaitType.UseDelay;
-
-        } else if (averages[1] < 3) {
-            result = WaitType.UseSleep;
-
-        }
-
-        switch (result) {
-            case WaitType.UseDelay:
-                PluginLog.Information("High resolution Task.Delay found, using delay in timing loops.");
-                break;
-            case WaitType.UseSleep:
-                PluginLog.Information("High resolution Thread.Sleep found, using sleep in timing loops.");
-                break;
-            default:
-                PluginLog.Information(
-                    "No high resolution, CPU-friendly waits available, timing loops will be inaccurate.");
-                break;
-        }
-
-        return result;
-    }
 }

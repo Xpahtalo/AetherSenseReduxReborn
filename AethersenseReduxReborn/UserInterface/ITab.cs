@@ -1,17 +1,10 @@
-﻿using Dalamud.Interface.Raii;
-using ImGuiNET;
+﻿using System;
 
 namespace AethersenseReduxReborn.UserInterface;
 
-public interface ITab
+public interface ITab: IDisposable
 {
-    public string Name  { get; }
+    public string Name { get; }
 
-    public void Draw()
-    {
-        using var tab = ImRaii.TabItem(Name);
-        if (!tab)
-            return;
-        ImGui.Text("Not implemented yet.");
-    }
+    public void Draw() { }
 }
