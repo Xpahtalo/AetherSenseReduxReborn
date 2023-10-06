@@ -1,3 +1,6 @@
 [submodule "XIVChatTools"]
 	path = XIVChatTools
 	url = git@github.com:Xpahtalo/XIVChatTools.git
+[submodule "XpahtaLib"]
+	path = XpahtaLib
+	url = https://github.com/Xpahtalo/XpahtaLib.git

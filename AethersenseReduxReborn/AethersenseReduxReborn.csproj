@@ -28,6 +28,7 @@
     
     <ItemGroup>
         <ProjectReference Include="..\XIVChatTools\XIVChatTypeEx\XIVChatTypeEx\XIVChatTools.csproj" />
+        <ProjectReference Include="..\XpahtaLib\XpahtaLib\XpahtaLib.csproj" />
     </ItemGroup>
 
 </Project>
