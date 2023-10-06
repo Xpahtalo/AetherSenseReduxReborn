@@ -33,21 +33,33 @@ public class SignalGroupTab: TabBase
 
         void DrawSignalGroupList()
         {
-            using var listChild = ImRaii.Child("###GroupListChild", new Vector2(availableRegion.X * 0.25f, 0), true);
-            if (!listChild)
-                return;
-            if (_signalService.SignalGroups.Count == 0)
-                return;
-            var listRegion = new Vector2 {
-                                             X = ImGui.GetContentRegionAvail().X,
-                                             Y = ImGui.GetContentRegionAvail().Y / ImGui.GetTextLineHeightWithSpacing() * ImGui.GetTextLineHeightWithSpacing(),
-                                         };
-            using var groupList = ImRaii.ListBox("###SignalGroupList", listRegion);
-            if (!groupList)
-                return;
-            foreach (var signalGroup in _signalService.SignalGroups)
-                if (ImGui.Selectable(signalGroup.Name, _selectedSignalGroup == signalGroup))
-                    _selectedSignalGroup = _selectedSignalGroup             == signalGroup ? null : signalGroup;
+            using (var listChild = ImRaii.Child("###GroupListChild", new Vector2(availableRegion.X * 0.25f, 0), true)){
+                if (!listChild)
+                    return;
+                if (_signalService.SignalGroups.Count == 0)
+                    return;
+                var listRegion = new Vector2 {
+                                                 X = ImGui.GetContentRegionAvail().X,
+                                                 Y = (ImGui.GetContentRegionAvail().Y / ImGui.GetTextLineHeightWithSpacing() - 1) * ImGui.GetTextLineHeightWithSpacing(),
+                                             };
+                using (var groupList = ImRaii.ListBox("###SignalGroupList", listRegion)){
+                    if (!groupList)
+                        return;
+                    foreach (var signalGroup in _signalService.SignalGroups)
+                        if (ImGui.Selectable(signalGroup.Name, _selectedSignalGroup == signalGroup))
+                            _selectedSignalGroup = _selectedSignalGroup             == signalGroup ? null : signalGroup;
+                }
+                if (ImGui.Button("Remove")){
+                    if (_selectedSignalGroup is not null)
+                        _signalService.RemoveSignalGroup(_selectedSignalGroup);
+                }
+                ImGui.SameLine();
+                if (ImGui.Button("Add"))
+                    _signalService.AddSignalGroup(new SignalGroup("New Signal Group"));
+                ImGui.SameLine();
+                if (ImGui.Button("Save"))
+                    _signalService.SaveConfiguration();
+            }
         }
 
         void DrawSelectedGroup()
@@ -64,8 +76,11 @@ public class SignalGroupTab: TabBase
 
     private void DrawSignalGroup(SignalGroup signalGroup)
     {
-        using var id = ImRaii.PushId(signalGroup.Name);
-        ImGui.Text(signalGroup.Name);
+        using var id = ImRaii.PushId("SignalGroupConfiguration");
+        var name = signalGroup.Name;
+        if (ImGui.InputText("", ref name, 100))
+            signalGroup.Name = name;
+        
         DrawActuatorCombo();
         ImGui.NewLine();
         ImGui.Text($"Intensity: {signalGroup.Signal}");

@@ -21,7 +21,11 @@ public sealed class SignalService: IDisposable
         Service.Framework.Update += FrameworkUpdate;
     }
 
-    public void SaveConfiguration() { _signalConfiguration.SignalGroups = SignalGroups; }
+    public void SaveConfiguration()
+    {
+        _signalConfiguration.SignalGroups = SignalGroups; 
+        Service.ConfigurationService.SaveSignalConfiguration(_signalConfiguration);
+    }
 
     public void Dispose() { Service.Framework.Update -= FrameworkUpdate; }
 
@@ -42,5 +46,15 @@ public sealed class SignalService: IDisposable
                 signalGroup.Enabled = false;
             }
         }
+    }
+    
+    public void AddSignalGroup(SignalGroup signalGroup)
+    {
+        SignalGroups.Add(signalGroup);
+    }
+    
+    public void RemoveSignalGroup(SignalGroup signalGroup)
+    {
+        SignalGroups.Remove(signalGroup);
     }
 }

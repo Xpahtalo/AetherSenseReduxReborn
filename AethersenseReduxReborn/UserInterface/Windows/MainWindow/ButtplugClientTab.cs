@@ -1,14 +1,21 @@
-﻿using ImGuiNET;
+﻿using AethersenseReduxReborn.Configurations;
+using ImGuiNET;
 
 namespace AethersenseReduxReborn.UserInterface.Windows.MainWindow;
 
 public class ButtplugClientTab: TabBase
 {
+    private ButtplugServerConfiguration _serverConfiguration;
+    
     private readonly ButtplugWrapper _buttplugWrapper;
 
     public override string Name => "Buttplug";
 
-    public ButtplugClientTab(ButtplugWrapper buttplugWrapper) { _buttplugWrapper = buttplugWrapper; }
+    public ButtplugClientTab(ButtplugWrapper buttplugWrapper)
+    {
+        _serverConfiguration = Service.ConfigurationService.ServerConfiguration;
+        _buttplugWrapper = buttplugWrapper;
+    }
 
     protected override void DrawTab()
     {
@@ -27,6 +34,15 @@ public class ButtplugClientTab: TabBase
             case false:
                 ImGui.Text("Click \"Connect\" to start.");
                 break;
+        }
+
+        if (!_buttplugWrapper.Connected){
+            var uri = _serverConfiguration.Address;
+            if (ImGui.InputText("Server Address", ref uri, 100))
+                _serverConfiguration.Address = uri;
+            ImGui.SameLine();
+            if (ImGui.Button("Save"))
+                Service.ConfigurationService.SaveServerConfiguration(_serverConfiguration);
         }
     }
 
