@@ -1,5 +1,6 @@
 ﻿using AethersenseReduxReborn.Configurations;
 using ImGuiNET;
+using XpahtaLib.UserInterface.Tabs;
 
 namespace AethersenseReduxReborn.UserInterface.Windows.MainWindow;
 

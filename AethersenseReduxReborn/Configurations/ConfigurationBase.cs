@@ -3,6 +3,7 @@ using System.Text.Json;
 
 namespace AethersenseReduxReborn.Configurations;
 
+
 public class ConfigurationBase
 {
     public virtual  int                        Version { get; set; }

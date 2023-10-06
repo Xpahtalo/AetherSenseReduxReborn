@@ -3,6 +3,7 @@ using System.Numerics;
 using AethersenseReduxReborn.SignalSources;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
+using XpahtaLib.UserInterface.Tabs;
 
 namespace AethersenseReduxReborn.UserInterface.Windows.MainWindow;
 
