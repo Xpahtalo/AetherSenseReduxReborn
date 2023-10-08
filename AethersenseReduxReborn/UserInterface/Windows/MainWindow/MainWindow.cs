@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Dalamud.Interface.Utility.Raii;
+using AethersenseReduxReborn.Buttplug;
 using Dalamud.Interface.Windowing;
 using XpahtaLib.UserInterface.Tabs;
 
@@ -9,28 +9,34 @@ namespace AethersenseReduxReborn.UserInterface.Windows.MainWindow;
 public sealed class MainWindow: Window, IDisposable
 {
     private readonly TabBar _tabBar;
-    
-    public static string Name => "Aethersense Redux Reborn";
+
+    public static string Name => "Aethersense Redux Reborn - This is in super alpha don't expect it to work.";
 
     public MainWindow(ButtplugWrapper buttplugWrapper, SignalService signalService)
         : base(Name)
     {
         _tabBar = new TabBar {
-                                   Name= "Main Window Tab Bar",
-                                   Tabs= new List<TabBase> {
-                                                             new ButtplugClientTab(buttplugWrapper),
-                                                             new SignalGroupTab(buttplugWrapper, signalService),
-                                                         },
-                               };
+            Name = "Main Window Tab Bar",
+            Tabs = new List<TabBase> {
+                new ButtplugClientTab(buttplugWrapper),
+                new SignalGroupTab(buttplugWrapper, signalService),
+            },
+        };
     }
 
-    public override void Draw()
+    public override void Draw() { _tabBar.Draw(); }
+
+    public override void OnOpen()
     {
-        _tabBar.Draw();
+        base.OnOpen();
+        _tabBar.OnOpen();
     }
 
-    public void Dispose()
+    public override void OnClose()
     {
-        _tabBar.Dispose();
+        base.OnClose();
+        _tabBar.OnClose();
     }
+
+    public void Dispose() { _tabBar.Dispose(); }
 }

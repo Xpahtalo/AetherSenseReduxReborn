@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace AethersenseReduxReborn.SignalSources;
+namespace AethersenseReduxReborn.Signals;
 
 public interface ISignalSource: IDisposable
 {
@@ -8,6 +8,4 @@ public interface ISignalSource: IDisposable
     public double Value { get; }
 
     public void Update(double elapsedMilliseconds);
-
-    public void DrawConfig();
 }

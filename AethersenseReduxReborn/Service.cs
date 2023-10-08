@@ -22,7 +22,7 @@ public class Service
     [PluginService] public static IGameGui               GameGui         { get; private set; }
     [PluginService] public static IDutyState             DutyState       { get; private set; }
     [PluginService] public static IPluginLog             PluginLog       { get; private set; }
-    
+
     public static ConfigurationService ConfigurationService { get; set; }
 }
 #pragma warning restore CS8618

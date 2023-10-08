@@ -5,12 +5,11 @@ namespace AethersenseReduxReborn.Configurations;
 
 public class ConfigurationService
 {
-    private readonly string _configDirectory; 
-    
-    public ButtplugServerConfiguration ServerConfiguration { get; private set; }
-    public SignalConfiguration         SignalConfiguration { get; private set; }
-    
-    
+    private readonly string _configDirectory;
+
+    public ButtplugPluginConfiguration PluginConfiguration       { get; private set; }
+    public SignalPluginConfiguration   SignalPluginConfiguration { get; private set; }
+
     public ConfigurationService()
     {
         _configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
@@ -22,43 +21,41 @@ public class ConfigurationService
     {
         Service.PluginLog.Information("Loading server configuration.");
         var path = Path.Combine(_configDirectory, "server.json");
-        if (!File.Exists(path))
-        {
-            ServerConfiguration = new ButtplugServerConfiguration();
+        if (!File.Exists(path)){
+            PluginConfiguration = new ButtplugPluginConfiguration();
             return;
         }
 
         var json = File.ReadAllText(path);
-        ServerConfiguration = JsonSerializer.Deserialize<ButtplugServerConfiguration>(json);
+        PluginConfiguration = JsonSerializer.Deserialize<ButtplugPluginConfiguration>(json, Json.Options);
     }
-    
+
     public void LoadSignalConfiguration()
     {
         Service.PluginLog.Information("Loading signal configuration.");
         var path = Path.Combine(_configDirectory, "signal.json");
-        if (!File.Exists(path))
-        {
-            SignalConfiguration = SignalConfiguration.DefaultConfiguration();
+        if (!File.Exists(path)){
+            SignalPluginConfiguration = SignalPluginConfiguration.GetDefaultConfiguration();
             return;
         }
-        
+
         var json = File.ReadAllText(path);
-        SignalConfiguration = JsonSerializer.Deserialize<SignalConfiguration>(json);
+        SignalPluginConfiguration = JsonSerializer.Deserialize<SignalPluginConfiguration>(json, Json.Options);
     }
-    
-    public void SaveServerConfiguration(ButtplugServerConfiguration serverConfiguration)
+
+    public void SaveServerConfiguration(ButtplugPluginConfiguration pluginConfiguration)
     {
         Service.PluginLog.Information("Saving server configuration.");
-        ServerConfiguration = serverConfiguration;
-        var json = JsonSerializer.Serialize(ServerConfiguration);
+        PluginConfiguration = pluginConfiguration;
+        var json = JsonSerializer.Serialize(PluginConfiguration, Json.Options);
         File.WriteAllText(Path.Combine(_configDirectory, "server.json"), json);
     }
 
-    public void SaveSignalConfiguration(SignalConfiguration signalConfiguration)
+    public void SaveSignalConfiguration(SignalPluginConfiguration signalPluginConfiguration)
     {
         Service.PluginLog.Information("Saving signal configuration.");
-        SignalConfiguration = signalConfiguration;
-        var json = JsonSerializer.Serialize(SignalConfiguration);
+        SignalPluginConfiguration = signalPluginConfiguration;
+        var json = JsonSerializer.Serialize(SignalPluginConfiguration, Json.Options);
         File.WriteAllText(Path.Combine(_configDirectory, "signal.json"), json);
     }
 }

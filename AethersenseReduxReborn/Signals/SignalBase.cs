@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace AethersenseReduxReborn.SignalSources;
+namespace AethersenseReduxReborn.Signals;
 
 public abstract class SignalBase: ISignalSource
 {
@@ -15,12 +15,9 @@ public abstract class SignalBase: ISignalSource
 
     public abstract void Update(double elapsedMilliseconds);
 
-    public abstract void DrawConfig();
-
     protected virtual void Dispose(bool disposing)
     {
-        if (disposing){
-        }
+        if (disposing){ }
     }
 
     public virtual void Dispose()

@@ -1,12 +1,12 @@
 ﻿using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
-using Dalamud.Interface.Utility.Raii;
-using ImGuiNET;
 using XIVChatTools;
 
-namespace AethersenseReduxReborn.SignalSources;
+namespace AethersenseReduxReborn.Signals;
 
 public class ChatTriggerSignal: SignalBase
 {
@@ -22,7 +22,7 @@ public class ChatTriggerSignal: SignalBase
     private void OnChatMessageReceived(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
         var channel = XIVChatTypeEx.Decode((uint)type).Item3;
-        
+
         if (channel != _config.ChatType)
             return;
         try{
@@ -54,45 +54,27 @@ public class ChatTriggerSignal: SignalBase
         Value = output;
     }
 
-    public override void DrawConfig()
-    {
-        ImGui.Text(Name);
-        ImGui.Text($"Intensity: {Value}");
-        _config.DrawConfigOptions();
-        if (ImGui.Button("Test Pattern"))
-            TriggerPattern();
-    }
-
     private void TriggerPattern() => _currentPattern = SimplePattern.CreatePatternFromConfig(_config.PatternConfig);
 }
 
-public class ChatTriggerSignalConfig
+public class ChatTriggerSignalConfig: SignalSourceConfig
 {
     public required SimplePatternConfig PatternConfig { get; set; }
-    public required Regex               Regex         { get; set; }
-    public required Channel         ChatType      { get; set; }
+    [JsonConverter(typeof(RegexConverter))]
+    public required Regex Regex { get;      set; }
+    public required Channel ChatType { get; set; }
 
     public static ChatTriggerSignalConfig DefaultConfig() =>
         new() {
-                  PatternConfig = SimplePatternConfig.DefaultConstantPattern(),
-                  Regex         = new Regex(""),
-                  ChatType      = Channel.BattleSystemMessage,
-              };
+            PatternConfig = SimplePatternConfig.DefaultConstantPattern(),
+            Regex         = new Regex(""),
+            ChatType      = Channel.BattleSystemMessage,
+        };
+}
 
-    public void DrawConfigOptions()
-    {
-        using (var chatTypeCombo = ImRaii.Combo("Chat Type", ChatType.ToString())){
-            if (chatTypeCombo){
-                foreach (var chatType in Enum.GetValues<Channel>()){
-                    if (ImGui.Selectable(chatType.ToString(), chatType == ChatType))
-                        ChatType = chatType;
-                }
-            }
-        }
-        var pattern = Regex.ToString();
-        if (ImGui.InputText("Regex", ref pattern, 2048))
-            Regex = new Regex(pattern);
+public class RegexConverter: JsonConverter<Regex>
+{
+    public override Regex Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => new(reader.GetString()!);
 
-        PatternConfig.DrawConfigOptions();
-    }
+    public override void Write(Utf8JsonWriter writer, Regex value, JsonSerializerOptions options) { writer.WriteStringValue(value.ToString()); }
 }

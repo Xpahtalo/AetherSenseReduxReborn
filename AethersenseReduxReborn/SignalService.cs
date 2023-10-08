@@ -1,60 +1,70 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using AethersenseReduxReborn.Buttplug;
 using AethersenseReduxReborn.Configurations;
-using AethersenseReduxReborn.SignalSources;
+using AethersenseReduxReborn.Signals.SignalGroup;
 using Dalamud.Plugin.Services;
 
 namespace AethersenseReduxReborn;
 
 public sealed class SignalService: IDisposable
 {
-    private readonly ButtplugWrapper     _buttplugWrapper;
-    private readonly SignalConfiguration _signalConfiguration;
-    public           List<SignalGroup>   SignalGroups { get; }
+    private readonly ButtplugWrapper           _buttplugWrapper;
+    private          SignalPluginConfiguration _signalPluginConfiguration;
+    public           IEnumerable<SignalGroup>  SignalGroups { get; } = new List<SignalGroup>();
 
-    public SignalService(ButtplugWrapper buttplugWrapper, SignalConfiguration signalConfiguration)
+    public SignalService(ButtplugWrapper buttplugWrapper, SignalPluginConfiguration signalPluginConfiguration)
     {
-        _buttplugWrapper         =  buttplugWrapper;
-        _signalConfiguration     =  signalConfiguration;
-        SignalGroups             =  signalConfiguration.SignalGroups;
-        Service.Framework.Update += FrameworkUpdate;
+        _buttplugWrapper                      =  buttplugWrapper;
+        _signalPluginConfiguration            =  signalPluginConfiguration;
+        Service.Framework.Update              += FrameworkUpdate;
+        _buttplugWrapper.ActuatorAddedEvent   += ActuatorAdded;
+        _buttplugWrapper.ActuatorRemovedEvent += ActuatorRemoved;
     }
 
-    public void SaveConfiguration()
+    public void SaveConfiguration(SignalPluginConfiguration signalPluginConfiguration)
     {
-        _signalConfiguration.SignalGroups = SignalGroups; 
-        Service.ConfigurationService.SaveSignalConfiguration(_signalConfiguration);
+        _signalPluginConfiguration = signalPluginConfiguration;
+        Service.ConfigurationService.SaveSignalConfiguration(_signalPluginConfiguration);
     }
 
     public void Dispose() { Service.Framework.Update -= FrameworkUpdate; }
 
     private void FrameworkUpdate(IFramework framework)
     {
-        if(_buttplugWrapper.Connected == false) 
+        if (_buttplugWrapper.Connected == false)
             return;
         foreach (var signalGroup in SignalGroups.Where(signalGroup => signalGroup.Enabled)){
             signalGroup.UpdateSources(framework.UpdateDelta.TotalMilliseconds);
             try{
-                _buttplugWrapper.SendCommandToDevice(signalGroup.DeviceName, signalGroup.ActuatorIndex, signalGroup.Signal);
-            }
-            catch(InvalidOperationException){
-                signalGroup.Enabled = false;
-            }
-            catch (Exception e){
-                Service.PluginLog.Warning("Exception while sending command to device {0}:\n{1}", signalGroup.DeviceName, e);
+                if (signalGroup is {
+                        Enabled: true, HashOfAssignedActuator: not null,
+                    })
+                    _buttplugWrapper.SendCommandToActuator(signalGroup.HashOfAssignedActuator, signalGroup.Signal);
+            } catch (InvalidOperationException){
                 signalGroup.Enabled = false;
             }
         }
     }
-    
-    public void AddSignalGroup(SignalGroup signalGroup)
+
+    private void ActuatorAdded(object? sender, ActuatorAddedEventArgs args)
     {
-        SignalGroups.Add(signalGroup);
+        foreach (var signalGroup in SignalGroups){
+            if (signalGroup.HashOfLastAssignedActuator != args.HashOfActuator)
+                continue;
+            signalGroup.HashOfAssignedActuator = args.HashOfActuator;
+            signalGroup.Enabled                = true;
+        }
     }
-    
-    public void RemoveSignalGroup(SignalGroup signalGroup)
+
+    private void ActuatorRemoved(object? sender, ActuatorRemovedEventArgs args)
     {
-        SignalGroups.Remove(signalGroup);
+        foreach (var signalGroup in SignalGroups){
+            if (signalGroup.HashOfAssignedActuator != args.HashOfActuator)
+                continue;
+            signalGroup.HashOfAssignedActuator = null;
+            signalGroup.Enabled                = false;
+        }
     }
 }

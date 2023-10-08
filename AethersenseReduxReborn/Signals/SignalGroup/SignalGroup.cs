@@ -1,34 +1,26 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace AethersenseReduxReborn.SignalSources;
+namespace AethersenseReduxReborn.Signals.SignalGroup;
 
 public class SignalGroup
 {
-    private bool   _enabled = true;
-    private string _deviceName;
-    private uint   _actuatorIndex;
-    
-    public string      Name        { get; set; }
-    public CombineType CombineType { get; set; }
-    public string DeviceName {
-        get => _deviceName;
-        set {
-            Service.PluginLog.Verbose("Setting DeviceName of SignalGroup {0} to {1}", Name, value);
-            _deviceName = value;
-            Enabled     = true;
-        }
-    }
-    public uint ActuatorIndex {
-        get => _actuatorIndex;
-        set {
-            Service.PluginLog.Verbose("Setting ActuatorIndex of SignalGroup {0} to {1}", Name, value);
-            _actuatorIndex = value;
-            Enabled        = true;
-        }
-    }
+    private bool    _enabled = true;
+    private byte[]? _hashOfAssignedActuator;
+
+    public string              Name          { get; set; }
+    public CombineType         CombineType   { get; set; }
     public double              Signal        { get; set; }
     public List<ISignalSource> SignalSources { get; } = new();
+    public byte[]? HashOfAssignedActuator {
+        get => _hashOfAssignedActuator;
+        set {
+            _hashOfAssignedActuator = value;
+            if (value is not null)
+                HashOfLastAssignedActuator = value;
+        }
+    }
+    public byte[]? HashOfLastAssignedActuator { get; set; }
     public bool Enabled {
         get => _enabled;
         set {
@@ -37,10 +29,12 @@ public class SignalGroup
         }
     }
 
-    public SignalGroup(string name, string deviceName = "")
+    public SignalGroup(SignalGroupConfiguration groupConfiguration)
     {
-        Name        = name;
-        _deviceName = deviceName;
+        Name                       = groupConfiguration.Name;
+        CombineType                = groupConfiguration.CombineType;
+        HashOfLastAssignedActuator = groupConfiguration.HashOfLastAssignedActuator;
+        Enabled                    = false;
     }
 
     public void UpdateSources(double elapsedMilliseconds)
@@ -49,8 +43,7 @@ public class SignalGroup
             signalSource.Update(elapsedMilliseconds);
         }
         var activeSources = SignalSources.Where(source => source.Value > 0).ToList();
-        if(activeSources.Count == 0)
-        {
+        if (activeSources.Count == 0){
             Signal = 0;
             return;
         }
@@ -60,10 +53,8 @@ public class SignalGroup
             CombineType.Minimum => activeSources.Min(source => source.Value),
             _                   => 0,
         };
-        if(double.IsNaN(intensity))
-        {
+        if (double.IsNaN(intensity))
             intensity = 0;
-        }
         Signal = double.Clamp(intensity, 0, 1);
     }
 
@@ -78,11 +69,4 @@ public class SignalGroup
         Service.PluginLog.Verbose("Removing SignalSource from SignalGroup {0}", Name);
         SignalSources.Remove(signalSource);
     }
-}
-
-public enum CombineType
-{
-    Average,
-    Max,
-    Minimum,
 }

@@ -1,4 +1,4 @@
-﻿namespace AethersenseReduxReborn.SignalSources;
+﻿namespace AethersenseReduxReborn.Signals;
 
 public enum SignalSourceType
 {
