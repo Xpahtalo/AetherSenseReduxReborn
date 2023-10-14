@@ -2,6 +2,7 @@
 using System.Linq;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.SubKinds;
+using Dalamud.Game.ClientState.Objects.Types;
 
 namespace AethersenseReduxReborn.Signals;
 
@@ -44,7 +45,7 @@ public sealed class CharacterAttributeSignal: SignalBase
                 _                   => throw new ArgumentOutOfRangeException(),
             },
             ObjectKind.BattleNpc or ObjectKind.EventNpc or ObjectKind.Companion => _attributeToTrack switch {
-                AttributeToTrack.Hp => (double)((PlayerCharacter)gameObject).CurrentHp / ((PlayerCharacter)gameObject).MaxHp,
+                AttributeToTrack.Hp => (double)((Character)gameObject).CurrentHp / ((Character)gameObject).MaxHp,
                 AttributeToTrack.Mp => 0d,
                 _                   => throw new ArgumentOutOfRangeException(),
             },
