@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using AethersenseReduxReborn.Configurations;
+using Dalamud.Game.ClientState.Objects;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
@@ -21,6 +22,7 @@ public class Service
     [PluginService] public static IObjectTable           ObjectTable     { get; private set; }
     [PluginService] public static IGameGui               GameGui         { get; private set; }
     [PluginService] public static IDutyState             DutyState       { get; private set; }
+    [PluginService] public static ITargetManager         TargetManager   { get; private set; }
     [PluginService] public static IPluginLog             PluginLog       { get; private set; }
 
     public static ConfigurationService ConfigurationService { get; set; }

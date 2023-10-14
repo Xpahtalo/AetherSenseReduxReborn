@@ -1,9 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace AethersenseReduxReborn.Signals.SignalGroup;
 
-public class SignalGroup
+public class SignalGroup: IDisposable
 {
     private bool    _enabled = true;
     private byte[]? _hashOfAssignedActuator;
@@ -24,7 +25,7 @@ public class SignalGroup
     public bool Enabled {
         get => _enabled;
         set {
-            Service.PluginLog.Verbose(value ? "Enabling SignalGroup {0}" : "Disabling SignalGroup {0}", Name);
+            Service.PluginLog.Debug(value ? "Enabling SignalGroup {0}" : "Disabling SignalGroup {0}", Name);
             _enabled = value;
         }
     }
@@ -34,7 +35,17 @@ public class SignalGroup
         Name                       = groupConfiguration.Name;
         CombineType                = groupConfiguration.CombineType;
         HashOfLastAssignedActuator = groupConfiguration.HashOfLastAssignedActuator;
-        Enabled                    = false;
+        _enabled                   = false;
+
+        foreach (var sourceConfig in groupConfiguration.SignalSources){
+            ISignalSource source = sourceConfig switch {
+                ChatTriggerSignalConfig chatTriggerSignalConfig         => new ChatTriggerSignal(chatTriggerSignalConfig),
+                CharacterAttributeSignalConfig playerAttributeSignalConfig => new CharacterAttributeSignal(playerAttributeSignalConfig),
+                _                                                       => throw new ArgumentOutOfRangeException(nameof(sourceConfig)),
+            };
+            Service.PluginLog.Debug("Adding new SignalSource {0} to SignalGroup {1}", sourceConfig.Name, Name);
+            AddSignalSource(source);
+        }
     }
 
     public void UpdateSources(double elapsedMilliseconds)
@@ -60,13 +71,41 @@ public class SignalGroup
 
     public void AddSignalSource(ISignalSource source)
     {
-        Service.PluginLog.Verbose("Adding new SignalSource to SignalGroup {0}", Name);
+        Service.PluginLog.Debug("Adding new SignalSource to SignalGroup {0}", Name);
         SignalSources.Add(source);
     }
 
     public void RemoveSignalSource(ISignalSource signalSource)
     {
-        Service.PluginLog.Verbose("Removing SignalSource from SignalGroup {0}", Name);
+        Service.PluginLog.Debug("Removing SignalSource from SignalGroup {0}", Name);
         SignalSources.Remove(signalSource);
+    }
+
+    public void Enable() => Enable(HashOfLastAssignedActuator ?? throw new InvalidOperationException());
+
+    public void Enable(byte[] hash)
+    {
+        HashOfAssignedActuator = hash;
+        Enabled                = true;
+    }
+
+    public void Disable()
+    {
+        HashOfAssignedActuator = null;
+        Enabled                = false;
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+            foreach (var source in SignalSources){
+                source.Dispose();
+            }
+    }
+
+    public virtual void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

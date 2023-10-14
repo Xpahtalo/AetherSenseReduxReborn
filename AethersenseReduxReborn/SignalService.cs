@@ -11,8 +11,8 @@ namespace AethersenseReduxReborn;
 public sealed class SignalService: IDisposable
 {
     private readonly ButtplugWrapper           _buttplugWrapper;
-    private          SignalPluginConfiguration _signalPluginConfiguration;
-    public           IEnumerable<SignalGroup>  SignalGroups { get; } = new List<SignalGroup>();
+    private readonly SignalPluginConfiguration _signalPluginConfiguration;
+    public           List<SignalGroup>         SignalGroups { get; } = new();
 
     public SignalService(ButtplugWrapper buttplugWrapper, SignalPluginConfiguration signalPluginConfiguration)
     {
@@ -21,12 +21,31 @@ public sealed class SignalService: IDisposable
         Service.Framework.Update              += FrameworkUpdate;
         _buttplugWrapper.ActuatorAddedEvent   += ActuatorAdded;
         _buttplugWrapper.ActuatorRemovedEvent += ActuatorRemoved;
+
+        ApplyConfiguration();
     }
 
-    public void SaveConfiguration(SignalPluginConfiguration signalPluginConfiguration)
+    public void ApplyConfiguration()
     {
-        _signalPluginConfiguration = signalPluginConfiguration;
+        foreach (var signalGroup in SignalGroups){
+            signalGroup.Dispose();
+        }
+        SignalGroups.Clear();
+        foreach (var groupConfig in _signalPluginConfiguration.SignalConfigurations){
+            Service.PluginLog.Verbose("Applying new Signal Group. Name: {0}, CombineType: {1}, HashOfLastAssignedActuator: ", groupConfig.Name, groupConfig.CombineType, groupConfig.HashOfLastAssignedActuator?.ToString() ?? "");
+            var signalGroup = new SignalGroup(groupConfig);
+            SignalGroups.Add(signalGroup);
+            if (signalGroup.HashOfLastAssignedActuator is null || !_buttplugWrapper.Actuators.ContainsKey(signalGroup.HashOfLastAssignedActuator))
+                continue;
+            signalGroup.Enable();
+        }
+        SignalGroups.TrimExcess();
+    }
+
+    public void SaveConfiguration()
+    {
         Service.ConfigurationService.SaveSignalConfiguration(_signalPluginConfiguration);
+        ApplyConfiguration();
     }
 
     public void Dispose() { Service.Framework.Update -= FrameworkUpdate; }
@@ -53,8 +72,7 @@ public sealed class SignalService: IDisposable
         foreach (var signalGroup in SignalGroups){
             if (signalGroup.HashOfLastAssignedActuator != args.HashOfActuator)
                 continue;
-            signalGroup.HashOfAssignedActuator = args.HashOfActuator;
-            signalGroup.Enabled                = true;
+            signalGroup.Enable(args.HashOfActuator);
         }
     }
 
@@ -63,8 +81,7 @@ public sealed class SignalService: IDisposable
         foreach (var signalGroup in SignalGroups){
             if (signalGroup.HashOfAssignedActuator != args.HashOfActuator)
                 continue;
-            signalGroup.HashOfAssignedActuator = null;
-            signalGroup.Enabled                = false;
+            signalGroup.Disable();
         }
     }
 }

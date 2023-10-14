@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
-using System.Text.RegularExpressions;
 using AethersenseReduxReborn.Buttplug;
 using AethersenseReduxReborn.Configurations;
 using AethersenseReduxReborn.Signals;
@@ -24,6 +23,7 @@ public class SignalGroupTab: TabBase
     private readonly Button                                        _removeSignalGroupButton;
     private readonly Button                                        _addSignalGroupButton;
     private readonly Button                                        _saveConfigurationButton;
+    private readonly Button                                        _applyConfigurationButton;
     private          SignalConfigChild?                            _signalConfigChild;
 
     private readonly ButtplugWrapper _buttplugWrapper;
@@ -62,7 +62,8 @@ public class SignalGroupTab: TabBase
                                                    SignalSources = new List<SignalSourceConfig>(),
                                                });
                                            });
-        _saveConfigurationButton = new Button("Save", () => _signalService.SaveConfiguration(_signalPluginConfiguration));
+        _saveConfigurationButton  = new Button("Save",  () => _signalService.SaveConfiguration());
+        _applyConfigurationButton = new Button("Apply", () => _signalService.ApplyConfiguration());
     }
 
     protected override void DrawTab()
@@ -89,6 +90,8 @@ public class SignalGroupTab: TabBase
             _removeSignalGroupButton.Draw();
             ImGui.SameLine();
             _addSignalGroupButton.Draw();
+            ImGui.SameLine();
+            _applyConfigurationButton.Draw();
             ImGui.SameLine();
             _saveConfigurationButton.Draw();
         }
@@ -140,7 +143,7 @@ internal class SignalConfigChild: ImGuiWidget
                                             {
                                                 SignalSourceConfig config = _signalSourceTypeToAdd switch {
                                                     SignalSourceType.ChatTrigger     => ChatTriggerSignalConfig.DefaultConfig(),
-                                                    SignalSourceType.PlayerAttribute => PlayerAttributeSignalConfig.DefaultConfig(),
+                                                    SignalSourceType.PlayerAttribute => CharacterAttributeSignalConfig.DefaultConfig(),
                                                     _                                => throw new ArgumentOutOfRangeException(),
                                                 };
                                                 AddNewConfigEntry(config);
@@ -158,7 +161,7 @@ internal class SignalConfigChild: ImGuiWidget
         _nameInput.Draw(_signalGroupConfiguration.Name);
         _actuatorCombo.Draw(_signalGroupConfiguration.HashOfLastAssignedActuator, _buttplugWrapper.Actuators.Keys);
         _combineTypeCombo.Draw(_signalGroupConfiguration.CombineType, Enum.GetValues<CombineType>());
-        
+
         ImGui.Separator();
         ImGui.Text("Signal Sources");
         _signalSourceTypeCombo.Draw(_signalSourceTypeToAdd, Enum.GetValues<SignalSourceType>());
@@ -181,7 +184,7 @@ internal class SignalConfigChild: ImGuiWidget
     {
         SignalSourceConfigEntry entry = config switch {
             ChatTriggerSignalConfig chatTriggerSignalConfig         => new ChatTriggerConfigEntry(chatTriggerSignalConfig),
-            PlayerAttributeSignalConfig playerAttributeSignalConfig => new PlayerAttributeConfigEntry(playerAttributeSignalConfig),
+            CharacterAttributeSignalConfig playerAttributeSignalConfig => new PlayerAttributeConfigEntry(playerAttributeSignalConfig),
             _                                                       => throw new ArgumentOutOfRangeException(nameof(config), config, null),
         };
         _signalSourceConfigEntries.Add(entry);
@@ -190,9 +193,8 @@ internal class SignalConfigChild: ImGuiWidget
 
 internal abstract class SignalSourceConfigEntry: ImGuiWidget
 {
-    public readonly SignalSourceConfig SignalSourceConfig;
-
-    private readonly TextInput _nameInput;
+    private readonly TextInput          _nameInput;
+    public readonly  SignalSourceConfig SignalSourceConfig;
 
     public SignalSourceConfigEntry(SignalSourceConfig signalSourceConfig)
     {
@@ -202,10 +204,7 @@ internal abstract class SignalSourceConfigEntry: ImGuiWidget
                                    s => signalSourceConfig.Name = s);
     }
 
-    public virtual void Draw()
-    {
-        _nameInput.Draw(SignalSourceConfig.Name);
-    }
+    public virtual void Draw() { _nameInput.Draw(SignalSourceConfig.Name); }
 }
 
 internal class ChatTriggerConfigEntry: SignalSourceConfigEntry
@@ -264,7 +263,7 @@ internal class ChatTriggerConfigEntry: SignalSourceConfigEntry
         // Trigger config
         var chatTriggerSignalConfig = (SignalSourceConfig as ChatTriggerSignalConfig)!;
         _chatChannelCombo.Draw(chatTriggerSignalConfig.ChatType, Enum.GetValues<Channel>());
-        _regexInput.Draw(chatTriggerSignalConfig.RegexPattern.ToString());
+        _regexInput.Draw(chatTriggerSignalConfig.RegexPattern);
 
         // Pattern config
         var patternConfig = chatTriggerSignalConfig.PatternConfig;
@@ -305,16 +304,18 @@ internal class PlayerAttributeConfigEntry: SignalSourceConfigEntry
     private readonly SingleSelectionCombo<AttributeToTrack> _attributeToTrackCombo;
     private readonly SingleSelectionCombo<Correlation>      _correlationCombo;
 
-    public PlayerAttributeConfigEntry(PlayerAttributeSignalConfig signalSourceConfig)
+    public PlayerAttributeConfigEntry(CharacterAttributeSignalConfig signalSourceConfig)
         : base(signalSourceConfig)
     {
         _playerNameInput = new TextInput("Player Name",
                                          20,
-                                         name => signalSourceConfig.Name = name);
+                                         name => signalSourceConfig.Name = name,
+                                         "Use {target} if you want it to dynamically change to your current target.\nUse {self} for your own character.");
         _attributeToTrackCombo = new SingleSelectionCombo<AttributeToTrack>("Attribute to Track",
                                                                             attributeToTrack => attributeToTrack.ToString(),
                                                                             (attributeToTrack1, attributeToTrack2) => attributeToTrack1 == attributeToTrack2,
-                                                                            selection => signalSourceConfig.AttributeToTrack = selection);
+                                                                            selection => signalSourceConfig.AttributeToTrack = selection,
+                                                                            "If using {target}, MP will do nothing when targeting enemies.");
         _correlationCombo = new SingleSelectionCombo<Correlation>("Correlation",
                                                                   correlation => correlation.ToString(),
                                                                   (correlation1, correlation2) => correlation1 == correlation2,
@@ -326,7 +327,7 @@ internal class PlayerAttributeConfigEntry: SignalSourceConfigEntry
         base.Draw();
         using var id = ImRaii.PushId(Id.ToString());
 
-        var attributeSignalConfig = (SignalSourceConfig as PlayerAttributeSignalConfig)!;
+        var attributeSignalConfig = (SignalSourceConfig as CharacterAttributeSignalConfig)!;
         _playerNameInput.Draw(attributeSignalConfig.Name);
         _attributeToTrackCombo.Draw(attributeSignalConfig.AttributeToTrack, Enum.GetValues<AttributeToTrack>());
         _correlationCombo.Draw(attributeSignalConfig.Correlation, Enum.GetValues<Correlation>());

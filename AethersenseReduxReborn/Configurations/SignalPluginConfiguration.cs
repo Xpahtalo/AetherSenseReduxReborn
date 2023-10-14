@@ -24,7 +24,7 @@ public sealed class SignalPluginConfiguration
                             ChatType      = Channel.BattleSystemMessage,
                             Name          = "New Trigger",
                             PatternConfig = SimplePatternConfig.DefaultConstantPattern(),
-                            RegexPattern         = "cast",
+                            RegexPattern  = "cast",
                         },
                     },
                 },
