@@ -26,8 +26,10 @@ public class ChatTriggerSignal: SignalBase
 
     private void OnChatMessageReceived(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
-        var channel = XIVChatTypeEx.Decode((uint)type).Item3;
+        var decode  = XivChatTypeEx.Decode((uint)type);
+        var channel = decode.Item3;
 
+        Service.PluginLog.Verbose("Chat message received from [{0}], [{1}], [{2}]", decode.Item1, decode.Item2, decode.Item3);
         if (channel != _chatChannel)
             return;
         try{

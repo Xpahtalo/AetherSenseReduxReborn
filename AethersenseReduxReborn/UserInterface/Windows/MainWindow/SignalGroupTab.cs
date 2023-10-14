@@ -52,8 +52,8 @@ public class SignalGroupTab: TabBase
                                               () =>
                                               {
                                                   _signalConfigChild = null;
-                                                  if (_selectedSignalGroupConfig is not null){
-                                                      _signalPluginConfiguration.SignalConfigurations.Remove(_selectedSignalGroupConfig);}
+                                                  if (_selectedSignalGroupConfig is not null)
+                                                      _signalPluginConfiguration.SignalConfigurations.Remove(_selectedSignalGroupConfig);
                                               });
         _addSignalGroupButton = new Button("Add",
                                            () =>
@@ -233,7 +233,7 @@ internal class ChatTriggerConfigEntry: SignalSourceConfigEntry
         : base(signalSourceConfig)
     {
         _chatChannelCombo = new SingleSelectionCombo<Channel>("Chat Channel",
-                                                              channel => channel.ToString(),
+                                                              channel => XivChatTypeEx.ChannelFriendlyName[channel],
                                                               (channel1, channel2) => channel1 == channel2,
                                                               selection => signalSourceConfig.ChatType = selection);
         _regexInput = new TextInput("RegexPattern",

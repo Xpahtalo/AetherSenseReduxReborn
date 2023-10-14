@@ -6,7 +6,7 @@ namespace AethersenseReduxReborn.Signals.SignalGroup;
 
 public class SignalGroup: IDisposable
 {
-    private bool    _enabled = true;
+    private bool    _enabled;
     private byte[]? _hashOfAssignedActuator;
 
     public string              Name          { get; set; }
@@ -39,9 +39,9 @@ public class SignalGroup: IDisposable
 
         foreach (var sourceConfig in groupConfiguration.SignalSources){
             ISignalSource source = sourceConfig switch {
-                ChatTriggerSignalConfig chatTriggerSignalConfig         => new ChatTriggerSignal(chatTriggerSignalConfig),
+                ChatTriggerSignalConfig chatTriggerSignalConfig            => new ChatTriggerSignal(chatTriggerSignalConfig),
                 CharacterAttributeSignalConfig playerAttributeSignalConfig => new CharacterAttributeSignal(playerAttributeSignalConfig),
-                _                                                       => throw new ArgumentOutOfRangeException(nameof(sourceConfig)),
+                _                                                          => throw new ArgumentOutOfRangeException(nameof(sourceConfig)),
             };
             Service.PluginLog.Debug("Adding new SignalSource {0} to SignalGroup {1}", sourceConfig.Name, Name);
             AddSignalSource(source);

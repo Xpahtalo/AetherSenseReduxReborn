@@ -2,7 +2,7 @@
 
 namespace AethersenseReduxReborn.Signals;
 
-[JsonDerivedType(typeof(ChatTriggerSignalConfig),     "ChatTrigger")]
+[JsonDerivedType(typeof(ChatTriggerSignalConfig),        "ChatTrigger")]
 [JsonDerivedType(typeof(CharacterAttributeSignalConfig), "CharacterAttribute")]
 public abstract class SignalSourceConfig
 {

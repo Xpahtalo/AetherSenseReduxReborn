@@ -13,11 +13,11 @@ public class ConfigurationService
     public ConfigurationService()
     {
         _configDirectory = Service.PluginInterface.GetPluginConfigDirectory();
-        LoadServerconfiguration();
+        LoadServerConfiguration();
         LoadSignalConfiguration();
     }
 
-    public void LoadServerconfiguration()
+    public void LoadServerConfiguration()
     {
         Service.PluginLog.Information("Loading server configuration.");
         var path = Path.Combine(_configDirectory, "server.json");
