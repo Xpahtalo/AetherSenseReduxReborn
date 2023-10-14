@@ -21,6 +21,7 @@ public sealed class SignalService: IDisposable
         Service.Framework.Update              += FrameworkUpdate;
         _buttplugWrapper.ActuatorAddedEvent   += ActuatorAdded;
         _buttplugWrapper.ActuatorRemovedEvent += ActuatorRemoved;
+        _buttplugWrapper.ServerConnectedEvent += ServerConnected;
 
         ApplyConfiguration();
     }
@@ -48,7 +49,13 @@ public sealed class SignalService: IDisposable
         ApplyConfiguration();
     }
 
-    public void Dispose() { Service.Framework.Update -= FrameworkUpdate; }
+    public void Dispose()
+    {
+        Service.Framework.Update              -= FrameworkUpdate;
+        _buttplugWrapper.ActuatorAddedEvent   -= ActuatorAdded;
+        _buttplugWrapper.ActuatorRemovedEvent -= ActuatorRemoved;
+        _buttplugWrapper.ServerConnectedEvent -= ServerConnected;
+    }
 
     private void FrameworkUpdate(IFramework framework)
     {
@@ -84,4 +91,6 @@ public sealed class SignalService: IDisposable
             signalGroup.Disable();
         }
     }
+
+    private void ServerConnected(object? sender, EventArgs args) { ApplyConfiguration(); }
 }

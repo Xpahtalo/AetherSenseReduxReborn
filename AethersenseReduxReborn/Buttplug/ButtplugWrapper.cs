@@ -26,6 +26,9 @@ public sealed class ButtplugWrapper: IDisposable
     public delegate void                      ActuatorRemovedEventHandler(object? sender, ActuatorRemovedEventArgs args);
     public event ActuatorRemovedEventHandler? ActuatorRemovedEvent;
 
+    public delegate void                 ServerConnectedHandler(object? sender, EventArgs args);
+    public event ServerConnectedHandler? ServerConnectedEvent;
+
     public ButtplugWrapper(string name, ButtplugPluginConfiguration pluginConfiguration)
     {
         _pluginConfiguration          =  pluginConfiguration;
@@ -54,6 +57,7 @@ public sealed class ButtplugWrapper: IDisposable
                          await _buttplugClient.ConnectAsync(new ButtplugWebsocketConnector(new Uri(_pluginConfiguration.Address)),
                                                             _buttplugCts.Token);
                          Service.PluginLog.Information("Connected to server.");
+                         ServerConnectedEvent?.Invoke(this, EventArgs.Empty);
                      } catch (Exception ex){
                          Service.PluginLog.Error(ex, "Failed to connect to buttplug server.");
                      }
