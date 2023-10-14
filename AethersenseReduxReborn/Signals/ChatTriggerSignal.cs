@@ -74,6 +74,6 @@ public class ChatTriggerSignalConfig: SignalSourceConfig
         new() {
             PatternConfig = SimplePatternConfig.DefaultConstantPattern(),
             RegexPattern  = "",
-            ChatType      = Channel.BattleSystemMessage,
+            ChatType      = Channel.Action,
         };
 }

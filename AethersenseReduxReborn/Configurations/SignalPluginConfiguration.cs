@@ -19,7 +19,7 @@ public sealed class SignalPluginConfiguration
                     CombineType = CombineType.Max,
                     SignalSources = new List<SignalSourceConfig> {
                         new ChatTriggerSignalConfig {
-                            ChatType      = Channel.BattleSystemMessage,
+                            ChatType      = Channel.Action,
                             Name          = "New Trigger",
                             PatternConfig = SimplePatternConfig.DefaultConstantPattern(),
                             RegexPattern  = "cast",
