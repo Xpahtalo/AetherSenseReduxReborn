@@ -7,24 +7,32 @@ namespace AethersenseReduxReborn.Signals;
 
 public sealed class PlayerAttributeSignal: SignalBase
 {
-    private readonly PlayerAttributeSignalConfig _config;
+    private readonly string           _playerName;
+    private readonly AttributeToTrack _attributeToTrack;
+    private readonly Correlation      _correlation;
 
-    public PlayerAttributeSignal(PlayerAttributeSignalConfig config) { _config = config; }
+    public PlayerAttributeSignal(PlayerAttributeSignalConfig config)
+        : base(config)
+    {
+        _playerName       = config.PlayerName;
+        _attributeToTrack = config.AttributeToTrack;
+        _correlation      = config.Correlation;
+    }
 
     public override void Update(double elapsedMilliseconds)
     {
-        if (_config.PlayerName.IsNullOrWhitespace()){
+        if (_playerName.IsNullOrWhitespace()){
             Value = 0;
             return;
         }
 
-        var player = (PlayerCharacter)Service.ObjectTable.Single(o => o.Name.TextValue == _config.PlayerName);
-        var val = _config.AttributeToTrack switch {
+        var player = (PlayerCharacter)Service.ObjectTable.Single(o => o.Name.TextValue == _playerName);
+        var val = _attributeToTrack switch {
             AttributeToTrack.Hp => (double)player.CurrentHp / player.MaxHp,
             AttributeToTrack.Mp => (double)player.CurrentMp / player.MaxMp,
             _                   => throw new ArgumentOutOfRangeException(),
         };
-        if (_config.Correlation == Correlation.Inverse)
+        if (_correlation == Correlation.Inverse)
             val = 1 - val;
         Value = val;
     }

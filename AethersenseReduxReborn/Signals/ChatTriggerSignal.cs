@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
@@ -10,12 +8,19 @@ namespace AethersenseReduxReborn.Signals;
 
 public class ChatTriggerSignal: SignalBase
 {
-    private          SimplePattern?          _currentPattern;
-    private readonly ChatTriggerSignalConfig _config;
+    private          SimplePattern?      _currentPattern;
+    private readonly Regex               _regex;
+    private readonly Channel             _chatChannel;
+    private readonly SimplePatternConfig _patternConfig;
+
 
     public ChatTriggerSignal(ChatTriggerSignalConfig config)
+        : base(config)
     {
-        _config                     =  config;
+        _regex         = new Regex(config.RegexPattern);
+        _chatChannel   = config.ChatType;
+        _patternConfig = config.PatternConfig;
+
         Service.ChatGui.ChatMessage += OnChatMessageReceived;
     }
 
@@ -23,11 +28,11 @@ public class ChatTriggerSignal: SignalBase
     {
         var channel = XIVChatTypeEx.Decode((uint)type).Item3;
 
-        if (channel != _config.ChatType)
+        if (channel != _chatChannel)
             return;
         try{
-            Service.PluginLog.Debug("Evaluating string regex [{0}] against [{1}]", _config.Regex, message.TextValue);
-            var match = _config.Regex.Match(message.TextValue);
+            Service.PluginLog.Debug("Evaluating string regex [{0}] against [{1}]", _regex, message.TextValue);
+            var match = _regex.Match(message.TextValue);
             if (!match.Success)
                 return;
             TriggerPattern();
@@ -54,27 +59,19 @@ public class ChatTriggerSignal: SignalBase
         Value = output;
     }
 
-    private void TriggerPattern() => _currentPattern = SimplePattern.CreatePatternFromConfig(_config.PatternConfig);
+    private void TriggerPattern() => _currentPattern = SimplePattern.CreatePatternFromConfig(_patternConfig);
 }
 
 public class ChatTriggerSignalConfig: SignalSourceConfig
 {
+    public required string              RegexPattern  { get; set; }
+    public required Channel             ChatType      { get; set; }
     public required SimplePatternConfig PatternConfig { get; set; }
-    [JsonConverter(typeof(RegexConverter))]
-    public required Regex Regex { get;      set; }
-    public required Channel ChatType { get; set; }
 
     public static ChatTriggerSignalConfig DefaultConfig() =>
         new() {
             PatternConfig = SimplePatternConfig.DefaultConstantPattern(),
-            Regex         = new Regex(""),
+            RegexPattern  = "",
             ChatType      = Channel.BattleSystemMessage,
         };
-}
-
-public class RegexConverter: JsonConverter<Regex>
-{
-    public override Regex Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => new(reader.GetString()!);
-
-    public override void Write(Utf8JsonWriter writer, Regex value, JsonSerializerOptions options) { writer.WriteStringValue(value.ToString()); }
 }

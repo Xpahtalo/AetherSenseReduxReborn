@@ -8,6 +8,11 @@ public abstract class SignalBase: ISignalSource
 
     public required string Name { get; set; }
 
+    protected SignalBase(SignalSourceConfig config)
+    {
+        Name = config.Name;
+    }
+    
     public double Value {
         get => _value;
         protected set => _value = double.Clamp(value, 0, 1);

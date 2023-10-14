@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using AethersenseReduxReborn.Signals;
 using AethersenseReduxReborn.Signals.SignalGroup;
 using XIVChatTools;
@@ -25,7 +24,7 @@ public sealed class SignalPluginConfiguration
                             ChatType      = Channel.BattleSystemMessage,
                             Name          = "New Trigger",
                             PatternConfig = SimplePatternConfig.DefaultConstantPattern(),
-                            Regex         = new Regex("cast"),
+                            RegexPattern         = "cast",
                         },
                     },
                 },

@@ -227,9 +227,9 @@ internal class ChatTriggerConfigEntry: SignalSourceConfigEntry
                                                               channel => channel.ToString(),
                                                               (channel1, channel2) => channel1 == channel2,
                                                               selection => signalSourceConfig.ChatType = selection);
-        _regexInput = new TextInput("Regex",
+        _regexInput = new TextInput("RegexPattern",
                                     2048,
-                                    s => signalSourceConfig.Regex = new Regex(s));
+                                    pattern => signalSourceConfig.RegexPattern = pattern);
         _patternTypeCombo = new SingleSelectionCombo<SimplePatternType>("Pattern Type",
                                                                         type => type.ToString(),
                                                                         (type1, type2) => type1 == type2,
@@ -264,7 +264,7 @@ internal class ChatTriggerConfigEntry: SignalSourceConfigEntry
         // Trigger config
         var chatTriggerSignalConfig = (SignalSourceConfig as ChatTriggerSignalConfig)!;
         _chatChannelCombo.Draw(chatTriggerSignalConfig.ChatType, Enum.GetValues<Channel>());
-        _regexInput.Draw(chatTriggerSignalConfig.Regex.ToString());
+        _regexInput.Draw(chatTriggerSignalConfig.RegexPattern.ToString());
 
         // Pattern config
         var patternConfig = chatTriggerSignalConfig.PatternConfig;
@@ -310,7 +310,7 @@ internal class PlayerAttributeConfigEntry: SignalSourceConfigEntry
     {
         _playerNameInput = new TextInput("Player Name",
                                          20,
-                                         s => signalSourceConfig.Name = s);
+                                         name => signalSourceConfig.Name = name);
         _attributeToTrackCombo = new SingleSelectionCombo<AttributeToTrack>("Attribute to Track",
                                                                             attributeToTrack => attributeToTrack.ToString(),
                                                                             (attributeToTrack1, attributeToTrack2) => attributeToTrack1 == attributeToTrack2,
