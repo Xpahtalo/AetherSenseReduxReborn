@@ -4,8 +4,6 @@ using AethersenseReduxReborn.Signals;
 using AethersenseReduxReborn.Signals.SignalGroup;
 using XIVChatTools;
 
-
-// ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace AethersenseReduxReborn.Configurations;
 
 public sealed class SignalPluginConfiguration

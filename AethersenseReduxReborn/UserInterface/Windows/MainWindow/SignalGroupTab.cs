@@ -43,15 +43,17 @@ public class SignalGroupTab: TabBase
                                                                              selectedConfig =>
                                                                              {
                                                                                  _selectedSignalGroupConfig = selectedConfig;
-                                                                                 if (_selectedSignalGroupConfig is not null)
+                                                                                 if (_selectedSignalGroupConfig is not null){
+                                                                                     Service.PluginLog.Verbose("SignalGroupTab: Selected SignalGroupConfiguration: {0}", _selectedSignalGroupConfig.Name);
                                                                                      _signalConfigChild = new SignalConfigChild(_selectedSignalGroupConfig, _signalService, _buttplugWrapper);
+                                                                                 }
                                                                              });
         _removeSignalGroupButton = new Button("Remove",
                                               () =>
                                               {
                                                   _signalConfigChild = null;
-                                                  if (_selectedSignalGroupConfig is not null)
-                                                      _signalPluginConfiguration.SignalConfigurations.Remove(_selectedSignalGroupConfig);
+                                                  if (_selectedSignalGroupConfig is not null){
+                                                      _signalPluginConfiguration.SignalConfigurations.Remove(_selectedSignalGroupConfig);}
                                               });
         _addSignalGroupButton = new Button("Add",
                                            () =>
@@ -61,6 +63,7 @@ public class SignalGroupTab: TabBase
                                                    Name          = "New Signal Group",
                                                    SignalSources = new List<SignalSourceConfig>(),
                                                });
+                                               Service.PluginLog.Verbose("SignalGroupTab: Add new SignalGroupConfiguration");
                                            });
         _saveConfigurationButton  = new Button("Save",  () => _signalService.SaveConfiguration());
         _applyConfigurationButton = new Button("Apply", () => _signalService.ApplyConfiguration());
@@ -146,6 +149,8 @@ internal class SignalConfigChild: ImGuiWidget
                                                     SignalSourceType.PlayerAttribute => CharacterAttributeSignalConfig.DefaultConfig(),
                                                     _                                => throw new ArgumentOutOfRangeException(),
                                                 };
+                                                Service.PluginLog.Verbose("SignalConfigChild: {0}: Add new SignalSourceConfig of type {1}", _signalGroupConfiguration.Name, _signalSourceTypeToAdd);
+                                                _signalGroupConfiguration.SignalSources.Add(config);
                                                 AddNewConfigEntry(config);
                                             });
 
@@ -183,11 +188,12 @@ internal class SignalConfigChild: ImGuiWidget
     private void AddNewConfigEntry(SignalSourceConfig config)
     {
         SignalSourceConfigEntry entry = config switch {
-            ChatTriggerSignalConfig chatTriggerSignalConfig         => new ChatTriggerConfigEntry(chatTriggerSignalConfig),
+            ChatTriggerSignalConfig chatTriggerSignalConfig            => new ChatTriggerConfigEntry(chatTriggerSignalConfig),
             CharacterAttributeSignalConfig playerAttributeSignalConfig => new PlayerAttributeConfigEntry(playerAttributeSignalConfig),
-            _                                                       => throw new ArgumentOutOfRangeException(nameof(config), config, null),
+            _                                                          => throw new ArgumentOutOfRangeException(nameof(config), config, null),
         };
         _signalSourceConfigEntries.Add(entry);
+        Service.PluginLog.Verbose("SignalConfigChild: {0}: Added source config to entry list: {1}", _signalGroupConfiguration.Name, entry.SignalSourceConfig.Name);
     }
 }
 
@@ -196,7 +202,7 @@ internal abstract class SignalSourceConfigEntry: ImGuiWidget
     private readonly TextInput          _nameInput;
     public readonly  SignalSourceConfig SignalSourceConfig;
 
-    public SignalSourceConfigEntry(SignalSourceConfig signalSourceConfig)
+    protected SignalSourceConfigEntry(SignalSourceConfig signalSourceConfig)
     {
         SignalSourceConfig = signalSourceConfig;
         _nameInput = new TextInput("Name",
@@ -204,7 +210,11 @@ internal abstract class SignalSourceConfigEntry: ImGuiWidget
                                    s => signalSourceConfig.Name = s);
     }
 
-    public virtual void Draw() { _nameInput.Draw(SignalSourceConfig.Name); }
+    public virtual void Draw()
+    {
+        using var id = ImRaii.PushId(Id.ToString());
+        _nameInput.Draw(SignalSourceConfig.Name);
+    }
 }
 
 internal class ChatTriggerConfigEntry: SignalSourceConfigEntry
@@ -307,9 +317,9 @@ internal class PlayerAttributeConfigEntry: SignalSourceConfigEntry
     public PlayerAttributeConfigEntry(CharacterAttributeSignalConfig signalSourceConfig)
         : base(signalSourceConfig)
     {
-        _playerNameInput = new TextInput("Player Name",
+        _playerNameInput = new TextInput("Character Name",
                                          20,
-                                         name => signalSourceConfig.Name = name,
+                                         name => signalSourceConfig.CharacterName = name,
                                          "Use {target} if you want it to dynamically change to your current target.\nUse {self} for your own character.");
         _attributeToTrackCombo = new SingleSelectionCombo<AttributeToTrack>("Attribute to Track",
                                                                             attributeToTrack => attributeToTrack.ToString(),
