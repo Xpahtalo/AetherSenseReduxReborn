@@ -35,8 +35,10 @@ public sealed class CharacterAttributeSignal: SignalBase
             _                         => throw new ArgumentOutOfRangeException(),
         };
 
-        if (gameObject is null || !gameObject.IsValid())
+        if (gameObject is null || !gameObject.IsValid()){
+            Value = 0;
             return;
+        }
 
         var value = gameObject.ObjectKind switch {
             ObjectKind.Player => _attributeToTrack switch {
