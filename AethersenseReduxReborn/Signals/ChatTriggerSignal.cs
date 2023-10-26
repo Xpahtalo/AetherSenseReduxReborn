@@ -33,7 +33,7 @@ public class ChatTriggerSignal: SignalBase
         if (channel != _chatChannel)
             return;
         try{
-            Service.PluginLog.Debug("Evaluating string regex [{0}] against [{1}]", _regex, message.TextValue);
+            Service.PluginLog.Verbose("Evaluating string regex [{0}] against [{1}]", _regex, message.TextValue);
             var match = _regex.Match(message.TextValue);
             if (!match.Success)
                 return;
