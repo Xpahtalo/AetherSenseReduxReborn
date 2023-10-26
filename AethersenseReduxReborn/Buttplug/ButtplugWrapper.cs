@@ -75,10 +75,11 @@ public sealed class ButtplugWrapper: IDisposable
 
     private void DeviceAdded(object? sender, DeviceAddedEventArgs args)
     {
-        Service.PluginLog.Information("Device added: {0}", args.Device.Name);
+        Service.PluginLog.Information("Adding device: {0}", args.Device.Name);
         var newDevice = new Device(args.Device);
 
         foreach (var actuator in newDevice.Actuators){
+            Service.PluginLog.Information("Adding actuator: {0} with hash {1}", actuator.DisplayName, actuator.Hash);
             Actuators.Add(actuator.Hash, actuator);
             ActuatorAddedEvent?.Invoke(this,
                                        new ActuatorAddedEventArgs {
@@ -92,17 +93,28 @@ public sealed class ButtplugWrapper: IDisposable
     private void DeviceRemoved(object? sender, DeviceRemovedEventArgs args)
     {
         try{
-            foreach (var actuator in Devices.Single(d => d.Name == args.Device.Name).Actuators){
-                Actuators.Remove(actuator.Hash);
-                ActuatorRemovedEvent?.Invoke(this,
-                                             new ActuatorRemovedEventArgs {
-                                                 HashOfActuator = actuator.Hash,
-                                             });
+            Service.PluginLog.Information("Removing device: {0}", args.Device.Name);
+            foreach (var actuator in Devices.Where(device => device.Name == args.Device.Name).SelectMany(device => device.Actuators)){
+                RemoveActuator(actuator.Hash);
             }
             Devices.Remove(Devices.Single(d => d.Name == args.Device.Name));
         } catch (Exception e){
             Service.PluginLog.Error("Unable to remove device from list of devices", e);
         }
+    }
+
+    private void RemoveActuator(byte[]? hash)
+    {
+        if (hash is null)
+            return;
+        if (!Actuators.ContainsKey(hash))
+            return;
+        Service.PluginLog.Information("Removing actuator: {0} with hash {1}", Actuators[hash].DisplayName, hash);
+        Actuators.Remove(hash);
+        ActuatorRemovedEvent?.Invoke(this,
+                                     new ActuatorRemovedEventArgs {
+                                         HashOfActuator = hash,
+                                     });
     }
 
     public void Dispose()
