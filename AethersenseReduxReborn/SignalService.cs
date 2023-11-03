@@ -33,7 +33,10 @@ public sealed class SignalService: IDisposable
         }
         SignalGroups.Clear();
         foreach (var groupConfig in _signalPluginConfiguration.SignalConfigurations){
-            Service.PluginLog.Verbose("Applying new Signal Group. Name: {0}, CombineType: {1}, HashOfLastAssignedActuator: ", groupConfig.Name, groupConfig.CombineType, groupConfig.HashOfLastAssignedActuator?.ToString() ?? "");
+            Service.PluginLog.Verbose("Applying new Signal Group. Name: {0}, CombineType: {1}, HashOfLastAssignedActuator: {2}",
+                                      groupConfig.Name,
+                                      groupConfig.CombineType,
+                                      groupConfig.HashOfLastAssignedActuator is not null ? BitConverter.ToString(groupConfig.HashOfLastAssignedActuator) : "null");
             var signalGroup = new SignalGroup(groupConfig);
             SignalGroups.Add(signalGroup);
             if (signalGroup.HashOfLastAssignedActuator is null || !_buttplugWrapper.Actuators.ContainsKey(signalGroup.HashOfLastAssignedActuator))
@@ -77,18 +80,16 @@ public sealed class SignalService: IDisposable
     private void ActuatorAdded(object? sender, ActuatorAddedEventArgs args)
     {
         foreach (var signalGroup in SignalGroups){
-            if (signalGroup.HashOfLastAssignedActuator != args.HashOfActuator)
-                continue;
-            signalGroup.Enable(args.HashOfActuator);
+            if (signalGroup.HashOfLastAssignedActuator == args.HashOfActuator)
+                signalGroup.Enable(args.HashOfActuator);
         }
     }
 
     private void ActuatorRemoved(object? sender, ActuatorRemovedEventArgs args)
     {
         foreach (var signalGroup in SignalGroups){
-            if (signalGroup.HashOfAssignedActuator != args.HashOfActuator)
-                continue;
-            signalGroup.Disable();
+            if (signalGroup.HashOfAssignedActuator == args.HashOfActuator)
+                signalGroup.Disable();
         }
     }
 

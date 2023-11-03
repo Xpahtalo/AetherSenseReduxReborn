@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System;
+using System.Security.Cryptography;
 using System.Text;
 using Buttplug.Core.Messages;
 
@@ -26,7 +27,7 @@ public class DeviceActuator
         OwnerDevice  = ownerDevice;
         var hashString = $"{OwnerDevice.Name}{Index}{ActuatorType}{Description}{Steps}";
         var hash       = MD5.HashData(Encoding.UTF8.GetBytes(hashString));
-        Service.PluginLog.Debug("Computed hash {0} for actuator {1}", hash, hashString);
+        Service.PluginLog.Debug("Computed hash {0} for actuator {1}", BitConverter.ToString(hash), hashString);
         Hash = hash;
     }
 

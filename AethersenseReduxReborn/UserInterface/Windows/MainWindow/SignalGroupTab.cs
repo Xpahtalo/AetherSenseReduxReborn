@@ -106,7 +106,7 @@ public class SignalGroupTab: TabBase
 internal class SignalConfigChild: ImGuiWidget
 {
     private readonly TextInput                              _nameInput;
-    private readonly SingleSelectionCombo<byte[]>           _actuatorCombo;
+    private readonly SingleSelectionCombo<byte[]?>           _actuatorCombo;
     private readonly SingleSelectionCombo<CombineType>      _combineTypeCombo;
     private readonly SingleSelectionCombo<SignalSourceType> _signalSourceTypeCombo;
     private          SignalSourceType                       _signalSourceTypeToAdd;
@@ -126,10 +126,21 @@ internal class SignalConfigChild: ImGuiWidget
         _nameInput = new TextInput("Name",
                                    100,
                                    s => _signalGroupConfiguration.Name = s);
-        _actuatorCombo = new SingleSelectionCombo<byte[]>("Assigned Actuator",
-                                                          hash => _buttplugWrapper.Actuators.TryGetValue(hash, out var actuator) ? actuator.DisplayName : "",
-                                                          (hash1, hash2) => hash1 == hash2,
-                                                          selection => _signalGroupConfiguration.HashOfLastAssignedActuator = selection);
+        _actuatorCombo = new SingleSelectionCombo<byte[]?>("Assigned Actuator",
+                                                           hash =>
+                                                           {
+                                                               if (hash == null)
+                                                                   return "Has not been assigned";
+                                                               return _buttplugWrapper.Actuators.TryGetValue(hash, out var actuator) ? actuator.DisplayName : "Actuator not connected.";
+                                                           },
+                                                           (hash1, hash2) => hash1 == hash2,
+                                                           selection =>
+                                                           {
+                                                               if (selection == null)
+                                                                   return;
+                                                               Service.PluginLog.Verbose("Signal Group {0} selected new actuator {1}", _signalGroupConfiguration.Name, BitConverter.ToString(selection));
+                                                               _signalGroupConfiguration.HashOfLastAssignedActuator = selection;
+                                                           });
         _combineTypeCombo = new SingleSelectionCombo<CombineType>("CombineType",
                                                                   combineType => combineType.ToString(),
                                                                   (combineType1, combineType2) => combineType1 == combineType2,
