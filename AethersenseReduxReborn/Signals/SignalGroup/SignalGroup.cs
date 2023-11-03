@@ -1,27 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using AethersenseReduxReborn.Buttplug;
 
 namespace AethersenseReduxReborn.Signals.SignalGroup;
 
-public class SignalGroup: IDisposable
+public sealed class SignalGroup: IDisposable
 {
-    private bool    _enabled;
-    private byte[]? _hashOfAssignedActuator;
+    private bool         _enabled;
+    private ActuatorHash _hashOfAssignedActuator;
 
     public string              Name          { get; set; }
     public CombineType         CombineType   { get; set; }
     public double              Signal        { get; set; }
     public List<ISignalSource> SignalSources { get; } = new();
-    public byte[]? HashOfAssignedActuator {
+    public ActuatorHash HashOfAssignedActuator {
         get => _hashOfAssignedActuator;
         set {
             _hashOfAssignedActuator = value;
-            if (value is not null)
+            if (value != ActuatorHash.Unassigned)
                 HashOfLastAssignedActuator = value;
         }
     }
-    public byte[]? HashOfLastAssignedActuator { get; set; }
+    public ActuatorHash HashOfLastAssignedActuator { get; set; }
     public bool Enabled {
         get => _enabled;
         set {
@@ -81,9 +82,9 @@ public class SignalGroup: IDisposable
         SignalSources.Remove(signalSource);
     }
 
-    public void Enable() => Enable(HashOfLastAssignedActuator ?? throw new InvalidOperationException());
+    public void Enable() => Enable(HashOfLastAssignedActuator);
 
-    public void Enable(byte[] hash)
+    public void Enable(ActuatorHash hash)
     {
         HashOfAssignedActuator = hash;
         Enabled                = true;
@@ -91,11 +92,11 @@ public class SignalGroup: IDisposable
 
     public void Disable()
     {
-        HashOfAssignedActuator = null;
+        HashOfAssignedActuator = ActuatorHash.Unassigned;
         Enabled                = false;
     }
 
-    protected virtual void Dispose(bool disposing)
+    private void Dispose(bool disposing)
     {
         if (disposing)
             foreach (var source in SignalSources){
@@ -103,7 +104,7 @@ public class SignalGroup: IDisposable
             }
     }
 
-    public virtual void Dispose()
+    public void Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);

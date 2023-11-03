@@ -16,9 +16,9 @@ public sealed class ButtplugWrapper: IDisposable
     private readonly ButtplugPluginConfiguration _pluginConfiguration;
     private readonly ButtplugClient              _buttplugClient;
 
-    public bool                               Connected => _buttplugClient.Connected;
-    public List<Device>                       Devices   { get; }
-    public Dictionary<byte[], DeviceActuator> Actuators { get; } = new();
+    public bool                                     Connected => _buttplugClient.Connected;
+    public List<Device>                             Devices   { get; }
+    public Dictionary<ActuatorHash, DeviceActuator> Actuators { get; } = new();
 
     public delegate void                    ActuatorAddedEventHandler(object? sender, ActuatorAddedEventArgs args);
     public event ActuatorAddedEventHandler? ActuatorAddedEvent;
@@ -38,7 +38,7 @@ public sealed class ButtplugWrapper: IDisposable
         _buttplugClient.DeviceRemoved += DeviceRemoved;
     }
 
-    public void SendCommandToActuator(byte[] hash, double value)
+    public void SendCommandToActuator(ActuatorHash hash, double value)
     {
         try{
             Actuators[hash].SendCommand(value);
@@ -94,8 +94,11 @@ public sealed class ButtplugWrapper: IDisposable
     {
         try{
             Service.PluginLog.Information("Removing device: {0}", args.Device.Name);
-            foreach (var actuator in Devices.Where(device => device.Name == args.Device.Name).SelectMany(device => device.Actuators)){
-                RemoveActuator(actuator.Hash);
+            foreach (var device in Devices){
+                if (device.Name == args.Device.Name)
+                    foreach (var actuator in device.Actuators){
+                        RemoveActuator(actuator.Hash);
+                    }
             }
             Devices.Remove(Devices.Single(d => d.Name == args.Device.Name));
         } catch (Exception e){
@@ -103,10 +106,8 @@ public sealed class ButtplugWrapper: IDisposable
         }
     }
 
-    private void RemoveActuator(byte[]? hash)
+    private void RemoveActuator(ActuatorHash hash)
     {
-        if (hash is null)
-            return;
         if (!Actuators.ContainsKey(hash))
             return;
         Service.PluginLog.Information("Removing actuator: {0} with hash {1}", Actuators[hash].DisplayName, hash);
@@ -127,10 +128,10 @@ public sealed class ButtplugWrapper: IDisposable
 
 public class ActuatorRemovedEventArgs: EventArgs
 {
-    public required byte[] HashOfActuator { get; init; }
+    public required ActuatorHash HashOfActuator { get; init; }
 }
 
 public class ActuatorAddedEventArgs: EventArgs
 {
-    public required byte[] HashOfActuator { get; init; }
+    public required ActuatorHash HashOfActuator { get; init; }
 }

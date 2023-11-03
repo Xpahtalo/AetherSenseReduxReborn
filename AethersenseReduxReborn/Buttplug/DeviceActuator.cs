@@ -1,7 +1,4 @@
-﻿using System;
-using System.Security.Cryptography;
-using System.Text;
-using Buttplug.Core.Messages;
+﻿using Buttplug.Core.Messages;
 
 namespace AethersenseReduxReborn.Buttplug;
 
@@ -14,9 +11,8 @@ public class DeviceActuator
     public string       Description  { get; }
     public uint         Steps        { get; }
     public Device       OwnerDevice  { get; }
-
-    public byte[] Hash        { get; }
-    public string DisplayName => $"{OwnerDevice.Name} - {Index} - {ActuatorType} - {Description}";
+    public ActuatorHash Hash         { get; }
+    public string       DisplayName  => $"{OwnerDevice.Name} - {Index} - {ActuatorType} - {Description}";
 
     public DeviceActuator(Device ownerDevice, GenericDeviceMessageAttributes attributes)
     {
@@ -25,10 +21,7 @@ public class DeviceActuator
         Description  = attributes.FeatureDescriptor;
         Steps        = attributes.StepCount;
         OwnerDevice  = ownerDevice;
-        var hashString = $"{OwnerDevice.Name}{Index}{ActuatorType}{Description}{Steps}";
-        var hash       = MD5.HashData(Encoding.UTF8.GetBytes(hashString));
-        Service.PluginLog.Debug("Computed hash {0} for actuator {1}", BitConverter.ToString(hash), hashString);
-        Hash = hash;
+        Hash         = ActuatorHash.ComputeHash(this);
     }
 
     public void SendCommand(double value)

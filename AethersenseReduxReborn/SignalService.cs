@@ -36,14 +36,13 @@ public sealed class SignalService: IDisposable
             Service.PluginLog.Verbose("Applying new Signal Group. Name: {0}, CombineType: {1}, HashOfLastAssignedActuator: {2}",
                                       groupConfig.Name,
                                       groupConfig.CombineType,
-                                      groupConfig.HashOfLastAssignedActuator is not null ? BitConverter.ToString(groupConfig.HashOfLastAssignedActuator) : "null");
+                                      groupConfig.HashOfLastAssignedActuator);
             var signalGroup = new SignalGroup(groupConfig);
             SignalGroups.Add(signalGroup);
-            if (signalGroup.HashOfLastAssignedActuator is null || !_buttplugWrapper.Actuators.ContainsKey(signalGroup.HashOfLastAssignedActuator))
-                continue;
-            signalGroup.Enable();
+
+            if (signalGroup.HashOfLastAssignedActuator != ActuatorHash.Unassigned && _buttplugWrapper.Actuators.ContainsKey(signalGroup.HashOfLastAssignedActuator))
+                signalGroup.Enable();
         }
-        SignalGroups.TrimExcess();
     }
 
     public void SaveConfiguration()
@@ -67,9 +66,7 @@ public sealed class SignalService: IDisposable
         foreach (var signalGroup in SignalGroups.Where(signalGroup => signalGroup.Enabled)){
             signalGroup.UpdateSources(framework.UpdateDelta.TotalMilliseconds);
             try{
-                if (signalGroup is {
-                        Enabled: true, HashOfAssignedActuator: not null,
-                    })
+                if (signalGroup.Enabled && signalGroup.HashOfAssignedActuator != ActuatorHash.Unassigned)
                     _buttplugWrapper.SendCommandToActuator(signalGroup.HashOfAssignedActuator, signalGroup.Signal);
             } catch (InvalidOperationException){
                 signalGroup.Enabled = false;
