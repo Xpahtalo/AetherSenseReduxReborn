@@ -12,8 +12,7 @@ public class ChatTriggerSignal: SignalBase
     private readonly Regex               _regex;
     private readonly Channel             _chatChannel;
     private readonly SimplePatternConfig _patternConfig;
-
-
+    
     public ChatTriggerSignal(ChatTriggerSignalConfig config)
         : base(config)
     {
@@ -37,6 +36,7 @@ public class ChatTriggerSignal: SignalBase
             var match = _regex.Match(message.TextValue);
             if (!match.Success)
                 return;
+            Service.PluginLog.Debug("Regex match found, triggering pattern");
             TriggerPattern();
         } catch (Exception ex){
             Service.PluginLog.Error(ex, "Error while matching regex");
