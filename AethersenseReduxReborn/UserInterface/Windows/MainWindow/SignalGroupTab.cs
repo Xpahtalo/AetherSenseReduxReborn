@@ -361,7 +361,7 @@ internal class PlayerAttributeConfigEntry: SignalSourceConfigEntry
         using var id = ImRaii.PushId(Id.ToString());
 
         var attributeSignalConfig = (SignalSourceConfig as CharacterAttributeSignalConfig)!;
-        _playerNameInput.Draw(attributeSignalConfig.Name);
+        _playerNameInput.Draw(attributeSignalConfig.CharacterName);
         _attributeToTrackCombo.Draw(attributeSignalConfig.AttributeToTrack, Enum.GetValues<AttributeToTrack>());
         _correlationCombo.Draw(attributeSignalConfig.Correlation, Enum.GetValues<Correlation>());
     }
