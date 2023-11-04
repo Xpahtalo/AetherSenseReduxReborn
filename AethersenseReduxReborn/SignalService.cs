@@ -4,6 +4,7 @@ using System.Linq;
 using AethersenseReduxReborn.Buttplug;
 using AethersenseReduxReborn.Buttplug.CustomEventArgs;
 using AethersenseReduxReborn.Configurations;
+using AethersenseReduxReborn.Signals;
 using AethersenseReduxReborn.Signals.SignalGroup;
 using Dalamud.Plugin.Services;
 
@@ -13,7 +14,11 @@ public sealed class SignalService: IDisposable
 {
     private readonly ButtplugWrapper           _buttplugWrapper;
     private readonly SignalPluginConfiguration _signalPluginConfiguration;
-    public           List<SignalGroup>         SignalGroups { get; } = new();
+    private          SimplePattern?            _testPattern;
+    private          ActuatorHash              _testHash = ActuatorHash.Zeroed;
+
+    public List<SignalGroup> SignalGroups { get; } = new();
+
 
     public SignalService(ButtplugWrapper buttplugWrapper, SignalPluginConfiguration signalPluginConfiguration)
     {
@@ -62,17 +67,33 @@ public sealed class SignalService: IDisposable
 
     private void FrameworkUpdate(IFramework framework)
     {
-        if (_buttplugWrapper.Connected == false)
-            return;
-        foreach (var signalGroup in SignalGroups.Where(signalGroup => signalGroup.Enabled)){
-            signalGroup.UpdateSources(framework.UpdateDelta.TotalMilliseconds);
-            try{
-                if (signalGroup.Enabled && signalGroup.HashOfAssignedActuator != ActuatorHash.Zeroed)
-                    _buttplugWrapper.SendCommandToActuator(signalGroup.HashOfAssignedActuator, signalGroup.Signal);
-            } catch (InvalidOperationException){
-                signalGroup.Enabled = false;
+        if (_testPattern != null && _testHash != ActuatorHash.Zeroed){
+            var value = _testPattern.Update(framework.UpdateDelta.TotalMilliseconds);
+            _buttplugWrapper.SendCommandToActuator(_testHash, value);
+            if (!_testPattern.IsCompleted)
+                return;
+            _testPattern = null;
+            _testHash    = ActuatorHash.Zeroed;
+        } else{
+            if (_buttplugWrapper.Connected == false)
+                return;
+            foreach (var signalGroup in SignalGroups.Where(signalGroup => signalGroup.Enabled)){
+                signalGroup.UpdateSources(framework.UpdateDelta.TotalMilliseconds);
+                try{
+                    if (signalGroup.Enabled && signalGroup.HashOfAssignedActuator != ActuatorHash.Zeroed)
+                        _buttplugWrapper.SendCommandToActuator(signalGroup.HashOfAssignedActuator, signalGroup.Signal);
+                } catch (InvalidOperationException ex){
+                    Service.PluginLog.Error(ex, "Error while sending command to actuator. ActuatorHash: {0}", signalGroup.HashOfAssignedActuator);
+                    signalGroup.Enabled = false;
+                }
             }
         }
+    }
+
+    public void SetTestPattern(SimplePatternConfig pattern, ActuatorHash hash)
+    {
+        _testPattern = SimplePattern.CreatePatternFromConfig(pattern);
+        _testHash    = hash;
     }
 
     private void ActuatorAdded(ActuatorAddedEventArgs args)

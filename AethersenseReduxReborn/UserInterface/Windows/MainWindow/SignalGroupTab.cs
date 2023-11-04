@@ -202,8 +202,8 @@ internal class SignalConfigChild: ImGuiWidget
     private void AddNewConfigEntry(SignalSourceConfig config)
     {
         SignalSourceConfigEntry entry = config switch {
-            ChatTriggerSignalConfig chatTriggerSignalConfig            => new ChatTriggerConfigEntry(chatTriggerSignalConfig),
-            CharacterAttributeSignalConfig playerAttributeSignalConfig => new PlayerAttributeConfigEntry(playerAttributeSignalConfig),
+            ChatTriggerSignalConfig chatTriggerSignalConfig            => new ChatTriggerConfigEntry(chatTriggerSignalConfig, _signalService, _signalGroupConfiguration),
+            CharacterAttributeSignalConfig playerAttributeSignalConfig => new PlayerAttributeConfigEntry(playerAttributeSignalConfig, _signalService, _signalGroupConfiguration),
             _                                                          => throw new ArgumentOutOfRangeException(nameof(config), config, null),
         };
         _signalSourceConfigEntries.Add(entry);
@@ -213,12 +213,16 @@ internal class SignalConfigChild: ImGuiWidget
 
 internal abstract class SignalSourceConfigEntry: ImGuiWidget
 {
-    private readonly TextInput          _nameInput;
-    public readonly  SignalSourceConfig SignalSourceConfig;
+    private readonly   TextInput                _nameInput;
+    protected readonly SignalService            _signalService;
+    protected readonly SignalGroupConfiguration _signalGroupConfiguration;
+    public readonly    SignalSourceConfig       SignalSourceConfig;
 
-    protected SignalSourceConfigEntry(SignalSourceConfig signalSourceConfig)
+    protected SignalSourceConfigEntry(SignalSourceConfig signalSourceConfig, SignalService signalService, SignalGroupConfiguration signalGroupConfiguration)
     {
-        SignalSourceConfig = signalSourceConfig;
+        SignalSourceConfig        = signalSourceConfig;
+        _signalService            = signalService;
+        _signalGroupConfiguration = signalGroupConfiguration;
         _nameInput = new TextInput("Name",
                                    100,
                                    s => signalSourceConfig.Name = s);
@@ -241,10 +245,11 @@ internal class ChatTriggerConfigEntry: SignalSourceConfigEntry
     private readonly FloatSlider                             _intensity2Slider;
     private readonly IntInput                                _duration1Input;
     private readonly IntInput                                _duration2Input;
+    private readonly Button                                  _testPatternButton;
 
 
-    public ChatTriggerConfigEntry(ChatTriggerSignalConfig signalSourceConfig)
-        : base(signalSourceConfig)
+    public ChatTriggerConfigEntry(ChatTriggerSignalConfig signalSourceConfig, SignalService signalService, SignalGroupConfiguration signalGroupConfiguration)
+        : base(signalSourceConfig, signalService, signalGroupConfiguration)
     {
         _chatChannelCombo = new SingleSelectionCombo<Channel>("Chat Channel",
                                                               channel => XivChatTypeEx.ChannelFriendlyName[channel],
@@ -277,6 +282,8 @@ internal class ChatTriggerConfigEntry: SignalSourceConfigEntry
         _duration2Input = new IntInput("Duration 2 (ms)",
                                        i => signalSourceConfig.PatternConfig.Duration2 = i,
                                        50);
+        _testPatternButton = new Button("Test",
+                                        () => _signalService.SetTestPattern(signalSourceConfig.PatternConfig, signalGroupConfiguration.HashOfLastAssignedActuator));
     }
 
     public override void Draw()
@@ -319,6 +326,8 @@ internal class ChatTriggerConfigEntry: SignalSourceConfigEntry
                 ImGui.Text("Unknown Pattern Type");
                 break;
         }
+        _testPatternButton.Draw();
+        ImGui.SameLine();
     }
 }
 
@@ -328,8 +337,8 @@ internal class PlayerAttributeConfigEntry: SignalSourceConfigEntry
     private readonly SingleSelectionCombo<AttributeToTrack> _attributeToTrackCombo;
     private readonly SingleSelectionCombo<Correlation>      _correlationCombo;
 
-    public PlayerAttributeConfigEntry(CharacterAttributeSignalConfig signalSourceConfig)
-        : base(signalSourceConfig)
+    public PlayerAttributeConfigEntry(CharacterAttributeSignalConfig signalSourceConfig, SignalService signalService, SignalGroupConfiguration signalGroupConfiguration)
+        : base(signalSourceConfig, signalService, signalGroupConfiguration)
     {
         _playerNameInput = new TextInput("Character Name",
                                          20,
