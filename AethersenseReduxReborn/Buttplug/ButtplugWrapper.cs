@@ -88,6 +88,7 @@ public sealed class ButtplugWrapper: IDisposable
         foreach (var device in Devices){
             _pluginConfiguration.SavedDevices.Add(new SavedDevice(device));
         }
+        Service.ConfigurationService.SaveServerConfiguration(_pluginConfiguration);
     }
 
 #region ButtplugClient passthrough

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Buttplug.Client;
 using Buttplug.Core.Messages;
@@ -80,6 +81,13 @@ public class SavedDevice
 {
     public string                    Name      { get; set; }
     public List<SavedDeviceActuator> Actuators { get; set; }
+
+    [JsonConstructor]
+    public SavedDevice(string name, List<SavedDeviceActuator> actuators)
+    {
+        Name      = name;
+        Actuators = actuators;
+    }
 
     public SavedDevice(Device device)
     {

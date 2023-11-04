@@ -1,5 +1,8 @@
-﻿using System.Collections.Immutable;
+﻿using System;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using AethersenseReduxReborn.Misc;
 using Buttplug.Core.Messages;
@@ -12,7 +15,7 @@ public record ActuatorHash: Md5Hash
 
     static ActuatorHash() { Zeroed = (Md5Hash.Zeroed as ActuatorHash)!; }
 
-    [JsonConstructor]
+    [SetsRequiredMembers]
     public ActuatorHash(ImmutableArray<byte> value)
         : base(value) { }
 
@@ -36,4 +39,11 @@ public record ActuatorHash: Md5Hash
           + $"{attribute.StepCount}");
 
     public override string ToString() => base.ToString();
+}
+
+public class ActuatorHashConverter: JsonConverter<ActuatorHash>
+{
+    public override ActuatorHash? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => new(reader.GetBytesFromBase64().ToImmutableArray());
+
+    public override void Write(Utf8JsonWriter writer, ActuatorHash value, JsonSerializerOptions options) { writer.WriteBase64StringValue(value.Value.ToArray()); }
 }

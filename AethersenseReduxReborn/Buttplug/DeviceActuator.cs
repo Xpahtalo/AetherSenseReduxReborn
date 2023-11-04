@@ -1,4 +1,5 @@
-﻿using Buttplug.Core.Messages;
+﻿using System.Text.Json.Serialization;
+using Buttplug.Core.Messages;
 
 namespace AethersenseReduxReborn.Buttplug;
 
@@ -64,9 +65,18 @@ public class SavedDeviceActuator
     public string       Description  { get; set; }
     public uint         Steps        { get; set; }
     public ActuatorHash Hash         { get; set; }
-
-
+    [JsonIgnore]
     public string DisplayName => $"{Index} - {ActuatorType} - {Description}";
+
+    [JsonConstructor]
+    public SavedDeviceActuator(uint index, ActuatorType actuatorType, string description, uint steps, ActuatorHash hash)
+    {
+        Index        = index;
+        ActuatorType = actuatorType;
+        Description  = description;
+        Steps        = steps;
+        Hash         = hash;
+    }
 
     public SavedDeviceActuator(DeviceActuator actuator)
     {
