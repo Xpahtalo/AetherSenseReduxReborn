@@ -15,25 +15,37 @@ public sealed class ButtplugWrapper: IDisposable
 
     private readonly ButtplugPluginConfiguration _pluginConfiguration;
     private readonly ButtplugClient              _buttplugClient;
+    private readonly DeviceCollection            _deviceCollection;
 
-    public bool                                     Connected => _buttplugClient.Connected;
-    public List<Device>                             Devices   { get; }
-    public Dictionary<ActuatorHash, DeviceActuator> Actuators { get; } = new();
-
-    public delegate void                    ActuatorAddedEventHandler(object? sender, ActuatorAddedEventArgs args);
-    public event ActuatorAddedEventHandler? ActuatorAddedEvent;
-
-    public delegate void                      ActuatorRemovedEventHandler(object? sender, ActuatorRemovedEventArgs args);
-    public event ActuatorRemovedEventHandler? ActuatorRemovedEvent;
+    public bool                          Connected          => _buttplugClient.Connected;
+    public IReadOnlyList<Device>         Devices            => _deviceCollection.KnownDevices;
+    public IReadOnlyList<Device>         ConnectedDevices   => Devices.Where(device => device.IsConnected).ToList().AsReadOnly();
+    public IReadOnlyList<DeviceActuator> Actuators          => Devices.SelectMany(device => device.Actuators).ToList().AsReadOnly();
+    public IEnumerable<DeviceActuator>   ConnectedActuators => ConnectedDevices.SelectMany(device => device.Actuators).ToList().AsReadOnly();
 
     public delegate void                 ServerConnectedHandler(object? sender, EventArgs args);
     public event ServerConnectedHandler? ServerConnectedEvent;
 
+    /// <summary>
+    ///     Called when an <see cref="DeviceActuator" /> has been connected to the server.
+    /// </summary>
+    public event DeviceCollection.ActuatorConnectedEventHandler? ActuatorConnected {
+        add => _deviceCollection.ActuatorConnected += value;
+        remove => _deviceCollection.ActuatorConnected -= value;
+    }
+    /// <summary>
+    ///     Called when an <see cref="DeviceActuator" /> has been disconnected from the server.
+    /// </summary>
+    public event DeviceCollection.ActuatorDisconnectedEventHandler? ActuatorDisconnected {
+        add => _deviceCollection.ActuatorDisconnected += value;
+        remove => _deviceCollection.ActuatorDisconnected -= value;
+    }
+
     public ButtplugWrapper(string name, ButtplugPluginConfiguration pluginConfiguration)
     {
         _pluginConfiguration          =  pluginConfiguration;
+        _deviceCollection             =  new DeviceCollection(pluginConfiguration);
         _buttplugClient               =  new ButtplugClient(name);
-        Devices                       =  new List<Device>();
         _buttplugClient.DeviceAdded   += DeviceAdded;
         _buttplugClient.DeviceRemoved += DeviceRemoved;
     }
@@ -41,12 +53,44 @@ public sealed class ButtplugWrapper: IDisposable
     public void SendCommandToActuator(ActuatorHash hash, double value)
     {
         try{
-            Actuators[hash].SendCommand(value);
-        } catch (KeyNotFoundException e){
-            Service.PluginLog.Error("Could not locate actuator with hash {0}", hash);
-            throw;
+            var actuator = GetActuatorByHash(hash);
+            if (actuator is null)
+                throw new KeyNotFoundException();
+            if (!actuator.IsConnected)
+                throw new InvalidOperationException("Actuator is not connected.");
+            actuator.SendCommand(value);
+        } catch (KeyNotFoundException ex){
+            Service.PluginLog.Error(ex, "Could not locate actuator with hash {0}", hash);
         }
     }
+
+    public bool IsActuatorConnected(ActuatorHash hash)
+    {
+        var actuator = GetActuatorByHash(hash);
+        return actuator is not null
+            && actuator.IsConnected;
+    }
+
+    public string GetActuatorDisplayName(ActuatorHash hash)
+    {
+        var actuator = GetActuatorByHash(hash);
+        return actuator is null
+                   ? "Unknown Actuator"
+                   : actuator.DisplayName;
+    }
+
+    public DeviceActuator? GetActuatorByHash(ActuatorHash hash) => Actuators.SingleOrDefault(actuator => actuator.Hash == hash);
+
+    public void SaveDevicesToConfiguration()
+    {
+        Service.PluginLog.Information("Saving devices to configuration.");
+        _pluginConfiguration.SavedDevices.Clear();
+        foreach (var device in Devices){
+            _pluginConfiguration.SavedDevices.Add(new SavedDevice(device));
+        }
+    }
+
+#region ButtplugClient passthrough
 
     public void Connect()
     {
@@ -71,52 +115,30 @@ public sealed class ButtplugWrapper: IDisposable
                      await _buttplugClient.DisconnectAsync();
                      _buttplugCts?.Cancel();
                  });
+        // DeviceRemoved event does not get called when the server is disconnected, so we need to manually remove all devices.
+        _deviceCollection.DisconnectAllDevices();
     }
 
     private void DeviceAdded(object? sender, DeviceAddedEventArgs args)
     {
-        Service.PluginLog.Information("Adding device: {0}", args.Device.Name);
-        var newDevice = new Device(args.Device);
-
-        foreach (var actuator in newDevice.Actuators){
-            Service.PluginLog.Information("Adding actuator: {0} with hash {1}", actuator.DisplayName, actuator.Hash);
-            Actuators.Add(actuator.Hash, actuator);
-            ActuatorAddedEvent?.Invoke(this,
-                                       new ActuatorAddedEventArgs {
-                                           HashOfActuator = actuator.Hash,
-                                       });
+        try{
+            Service.PluginLog.Information("New ButtplugDevice connected: {0}", args.Device.Name);
+            _deviceCollection.AddNewButtplugDevice(args.Device);
+        } catch (Exception){
+            Service.PluginLog.Warning("Unable to add device to list of devices");
         }
-
-        Devices.Add(newDevice);
     }
 
     private void DeviceRemoved(object? sender, DeviceRemovedEventArgs args)
     {
         try{
-            Service.PluginLog.Information("Removing device: {0}", args.Device.Name);
-            foreach (var device in Devices){
-                if (device.Name == args.Device.Name)
-                    foreach (var actuator in device.Actuators){
-                        RemoveActuator(actuator.Hash);
-                    }
-            }
-            Devices.Remove(Devices.Single(d => d.Name == args.Device.Name));
-        } catch (Exception e){
-            Service.PluginLog.Error("Unable to remove device from list of devices", e);
+            _deviceCollection.DisconnectButtplugDevice(args.Device);
+        } catch (Exception ex){
+            Service.PluginLog.Error(ex, "Unable to remove device from list of devices");
         }
     }
 
-    private void RemoveActuator(ActuatorHash hash)
-    {
-        if (!Actuators.ContainsKey(hash))
-            return;
-        Service.PluginLog.Information("Removing actuator: {0} with hash {1}", Actuators[hash].DisplayName, hash);
-        Actuators.Remove(hash);
-        ActuatorRemovedEvent?.Invoke(this,
-                                     new ActuatorRemovedEventArgs {
-                                         HashOfActuator = hash,
-                                     });
-    }
+#endregion
 
     public void Dispose()
     {
@@ -124,14 +146,4 @@ public sealed class ButtplugWrapper: IDisposable
         _buttplugClient.Dispose();
         _buttplugCts?.Dispose();
     }
-}
-
-public class ActuatorRemovedEventArgs: EventArgs
-{
-    public required ActuatorHash HashOfActuator { get; init; }
-}
-
-public class ActuatorAddedEventArgs: EventArgs
-{
-    public required ActuatorHash HashOfActuator { get; init; }
 }

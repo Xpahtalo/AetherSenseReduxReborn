@@ -38,8 +38,8 @@ public class ChatTriggerSignal: SignalBase
             if (!match.Success)
                 return;
             TriggerPattern();
-        } catch (Exception e){
-            Service.PluginLog.Error(e, "Error while matching regex");
+        } catch (Exception ex){
+            Service.PluginLog.Error(ex, "Error while matching regex");
         }
     }
 

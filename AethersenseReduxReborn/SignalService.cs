@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using AethersenseReduxReborn.Buttplug;
+using AethersenseReduxReborn.Buttplug.CustomEventArgs;
 using AethersenseReduxReborn.Configurations;
 using AethersenseReduxReborn.Signals.SignalGroup;
 using Dalamud.Plugin.Services;
@@ -19,8 +20,8 @@ public sealed class SignalService: IDisposable
         _buttplugWrapper                      =  buttplugWrapper;
         _signalPluginConfiguration            =  signalPluginConfiguration;
         Service.Framework.Update              += FrameworkUpdate;
-        _buttplugWrapper.ActuatorAddedEvent   += ActuatorAdded;
-        _buttplugWrapper.ActuatorRemovedEvent += ActuatorRemoved;
+        _buttplugWrapper.ActuatorConnected    += ActuatorAdded;
+        _buttplugWrapper.ActuatorDisconnected += ActuatorRemoved;
         _buttplugWrapper.ServerConnectedEvent += ServerConnected;
 
         ApplyConfiguration();
@@ -33,14 +34,14 @@ public sealed class SignalService: IDisposable
         }
         SignalGroups.Clear();
         foreach (var groupConfig in _signalPluginConfiguration.SignalConfigurations){
-            Service.PluginLog.Verbose("Applying new Signal Group. Name: {0}, CombineType: {1}, HashOfLastAssignedActuator: {2}",
-                                      groupConfig.Name,
-                                      groupConfig.CombineType,
-                                      groupConfig.HashOfLastAssignedActuator);
+            Service.PluginLog.Debug("Applying new Signal Group. Name: {0}, CombineType: {1}, HashOfLastAssignedActuator: {2}",
+                                    groupConfig.Name,
+                                    groupConfig.CombineType,
+                                    groupConfig.HashOfLastAssignedActuator);
             var signalGroup = new SignalGroup(groupConfig);
             SignalGroups.Add(signalGroup);
 
-            if (signalGroup.HashOfLastAssignedActuator != ActuatorHash.Unassigned && _buttplugWrapper.Actuators.ContainsKey(signalGroup.HashOfLastAssignedActuator))
+            if (signalGroup.HashOfLastAssignedActuator != ActuatorHash.Zeroed && _buttplugWrapper.IsActuatorConnected(signalGroup.HashOfLastAssignedActuator))
                 signalGroup.Enable();
         }
     }
@@ -54,8 +55,8 @@ public sealed class SignalService: IDisposable
     public void Dispose()
     {
         Service.Framework.Update              -= FrameworkUpdate;
-        _buttplugWrapper.ActuatorAddedEvent   -= ActuatorAdded;
-        _buttplugWrapper.ActuatorRemovedEvent -= ActuatorRemoved;
+        _buttplugWrapper.ActuatorConnected    -= ActuatorAdded;
+        _buttplugWrapper.ActuatorDisconnected -= ActuatorRemoved;
         _buttplugWrapper.ServerConnectedEvent -= ServerConnected;
     }
 
@@ -66,7 +67,7 @@ public sealed class SignalService: IDisposable
         foreach (var signalGroup in SignalGroups.Where(signalGroup => signalGroup.Enabled)){
             signalGroup.UpdateSources(framework.UpdateDelta.TotalMilliseconds);
             try{
-                if (signalGroup.Enabled && signalGroup.HashOfAssignedActuator != ActuatorHash.Unassigned)
+                if (signalGroup.Enabled && signalGroup.HashOfAssignedActuator != ActuatorHash.Zeroed)
                     _buttplugWrapper.SendCommandToActuator(signalGroup.HashOfAssignedActuator, signalGroup.Signal);
             } catch (InvalidOperationException){
                 signalGroup.Enabled = false;
@@ -74,7 +75,7 @@ public sealed class SignalService: IDisposable
         }
     }
 
-    private void ActuatorAdded(object? sender, ActuatorAddedEventArgs args)
+    private void ActuatorAdded(ActuatorAddedEventArgs args)
     {
         foreach (var signalGroup in SignalGroups){
             if (signalGroup.HashOfLastAssignedActuator == args.HashOfActuator)
@@ -82,7 +83,7 @@ public sealed class SignalService: IDisposable
         }
     }
 
-    private void ActuatorRemoved(object? sender, ActuatorRemovedEventArgs args)
+    private void ActuatorRemoved(ActuatorRemovedEventArgs args)
     {
         foreach (var signalGroup in SignalGroups){
             if (signalGroup.HashOfAssignedActuator == args.HashOfActuator)

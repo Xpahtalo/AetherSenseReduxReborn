@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using AethersenseReduxReborn.Buttplug;
 using AethersenseReduxReborn.Configurations;
@@ -44,7 +45,7 @@ public class SignalGroupTab: TabBase
                                                                              {
                                                                                  _selectedSignalGroupConfig = selectedConfig;
                                                                                  if (_selectedSignalGroupConfig is not null){
-                                                                                     Service.PluginLog.Verbose("SignalGroupTab: Selected SignalGroupConfiguration: {0}", _selectedSignalGroupConfig.Name);
+                                                                                     Service.PluginLog.Debug("SignalGroupTab: Selected SignalGroupConfiguration: {0}", _selectedSignalGroupConfig.Name);
                                                                                      _signalConfigChild = new SignalConfigChild(_selectedSignalGroupConfig, _signalService, _buttplugWrapper);
                                                                                  }
                                                                              });
@@ -63,9 +64,14 @@ public class SignalGroupTab: TabBase
                                                    Name          = "New Signal Group",
                                                    SignalSources = new List<SignalSourceConfig>(),
                                                });
-                                               Service.PluginLog.Verbose("SignalGroupTab: Add new SignalGroupConfiguration");
+                                               Service.PluginLog.Debug("SignalGroupTab: Add new SignalGroupConfiguration");
                                            });
-        _saveConfigurationButton  = new Button("Save",  () => _signalService.SaveConfiguration());
+        _saveConfigurationButton = new Button("Save",
+                                              () =>
+                                              {
+                                                  _buttplugWrapper.SaveDevicesToConfiguration();
+                                                  _signalService.SaveConfiguration();
+                                              });
         _applyConfigurationButton = new Button("Apply", () => _signalService.ApplyConfiguration());
     }
 
@@ -127,18 +133,15 @@ internal class SignalConfigChild: ImGuiWidget
                                    100,
                                    s => _signalGroupConfiguration.Name = s);
         _actuatorCombo = new SingleSelectionCombo<ActuatorHash>("Assigned Actuator",
-                                                                hash =>
-                                                                {
-                                                                    if (hash == ActuatorHash.Unassigned)
-                                                                        return "Has not been assigned";
-                                                                    return _buttplugWrapper.Actuators.TryGetValue(hash, out var actuator) ? actuator.DisplayName : "Actuator not connected.";
-                                                                },
+                                                                hash => _buttplugWrapper.GetActuatorDisplayName(hash),
                                                                 (hash1, hash2) => hash1 == hash2,
                                                                 selection =>
                                                                 {
-                                                                    if (selection == ActuatorHash.Unassigned)
+                                                                    if (selection is null)
                                                                         return;
-                                                                    Service.PluginLog.Verbose("Signal Group {0} selected new actuator {1}", _signalGroupConfiguration.Name, selection);
+                                                                    if (selection == ActuatorHash.Zeroed)
+                                                                        return;
+                                                                    Service.PluginLog.Debug("Signal Group {0} selected new actuator {1}", _signalGroupConfiguration.Name, selection);
                                                                     _signalGroupConfiguration.HashOfLastAssignedActuator = selection;
                                                                 });
         _combineTypeCombo = new SingleSelectionCombo<CombineType>("CombineType",
@@ -160,7 +163,7 @@ internal class SignalConfigChild: ImGuiWidget
                                                     SignalSourceType.PlayerAttribute => CharacterAttributeSignalConfig.DefaultConfig(),
                                                     _                                => throw new ArgumentOutOfRangeException(),
                                                 };
-                                                Service.PluginLog.Verbose("SignalConfigChild: {0}: Add new SignalSourceConfig of type {1}", _signalGroupConfiguration.Name, _signalSourceTypeToAdd);
+                                                Service.PluginLog.Debug("SignalConfigChild: {0}: Add new SignalSourceConfig of type {1}", _signalGroupConfiguration.Name, _signalSourceTypeToAdd);
                                                 _signalGroupConfiguration.SignalSources.Add(config);
                                                 AddNewConfigEntry(config);
                                             });
@@ -175,7 +178,7 @@ internal class SignalConfigChild: ImGuiWidget
         using var id    = ImRaii.PushId(Id.ToString());
         using var child = ImRaii.Child("SignalConfigChild");
         _nameInput.Draw(_signalGroupConfiguration.Name);
-        _actuatorCombo.Draw(_signalGroupConfiguration.HashOfLastAssignedActuator, _buttplugWrapper.Actuators.Keys);
+        _actuatorCombo.Draw(_signalGroupConfiguration.HashOfLastAssignedActuator, _buttplugWrapper.Actuators.Select(actuator => actuator.Hash));
         _combineTypeCombo.Draw(_signalGroupConfiguration.CombineType, Enum.GetValues<CombineType>());
 
         ImGui.Separator();
@@ -204,7 +207,7 @@ internal class SignalConfigChild: ImGuiWidget
             _                                                          => throw new ArgumentOutOfRangeException(nameof(config), config, null),
         };
         _signalSourceConfigEntries.Add(entry);
-        Service.PluginLog.Verbose("SignalConfigChild: {0}: Added source config to entry list: {1}", _signalGroupConfiguration.Name, entry.SignalSourceConfig.Name);
+        Service.PluginLog.Debug("SignalConfigChild: {0}: Added source config to entry list: {1}", _signalGroupConfiguration.Name, entry.SignalSourceConfig.Name);
     }
 }
 

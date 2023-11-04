@@ -10,9 +10,21 @@ public class DeviceActuator
     public ActuatorType ActuatorType { get; }
     public string       Description  { get; }
     public uint         Steps        { get; }
-    public Device       OwnerDevice  { get; }
     public ActuatorHash Hash         { get; }
+    public Device       OwnerDevice  { get; }
     public string       DisplayName  => $"{OwnerDevice.Name} - {Index} - {ActuatorType} - {Description}";
+    public bool         IsConnected  => OwnerDevice.IsConnected;
+
+    public DeviceActuator(SavedDeviceActuator savedActuator, Device ownerDevice)
+    {
+        Index        = savedActuator.Index;
+        ActuatorType = savedActuator.ActuatorType;
+        Description  = savedActuator.Description;
+        Steps        = savedActuator.Steps;
+        OwnerDevice  = ownerDevice;
+        Hash         = savedActuator.Hash;
+        Service.PluginLog.Debug("Created known actuator from config: {0} with hash {1}", DisplayName, Hash);
+    }
 
     public DeviceActuator(Device ownerDevice, GenericDeviceMessageAttributes attributes)
     {
@@ -21,7 +33,8 @@ public class DeviceActuator
         Description  = attributes.FeatureDescriptor;
         Steps        = attributes.StepCount;
         OwnerDevice  = ownerDevice;
-        Hash         = ActuatorHash.ComputeHash(this);
+        Hash         = new ActuatorHash(this);
+        Service.PluginLog.Debug("Created new actuator from ButtplugClientDevice: {0} with hash {1}", DisplayName, Hash);
     }
 
     public void SendCommand(double value)
@@ -41,5 +54,27 @@ public class DeviceActuator
         Service.PluginLog.Debug("Quantized value {0} to {1}", value, quantized);
         _previousValue = quantized;
         return (quantized, true);
+    }
+}
+
+public class SavedDeviceActuator
+{
+    public uint         Index        { get; set; }
+    public ActuatorType ActuatorType { get; set; }
+    public string       Description  { get; set; }
+    public uint         Steps        { get; set; }
+    public ActuatorHash Hash         { get; set; }
+
+
+    public string DisplayName => $"{Index} - {ActuatorType} - {Description}";
+
+    public SavedDeviceActuator(DeviceActuator actuator)
+    {
+        Index        = actuator.Index;
+        ActuatorType = actuator.ActuatorType;
+        Description  = actuator.Description;
+        Steps        = actuator.Steps;
+        Hash         = actuator.Hash;
+        Service.PluginLog.Debug("Created saved actuator from actuator: {0}", DisplayName);
     }
 }

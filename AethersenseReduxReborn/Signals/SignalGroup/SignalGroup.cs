@@ -18,7 +18,7 @@ public sealed class SignalGroup: IDisposable
         get => _hashOfAssignedActuator;
         set {
             _hashOfAssignedActuator = value;
-            if (value != ActuatorHash.Unassigned)
+            if (value != ActuatorHash.Zeroed)
                 HashOfLastAssignedActuator = value;
         }
     }
@@ -92,7 +92,7 @@ public sealed class SignalGroup: IDisposable
 
     public void Disable()
     {
-        HashOfAssignedActuator = ActuatorHash.Unassigned;
+        HashOfAssignedActuator = ActuatorHash.Zeroed;
         Enabled                = false;
     }
 

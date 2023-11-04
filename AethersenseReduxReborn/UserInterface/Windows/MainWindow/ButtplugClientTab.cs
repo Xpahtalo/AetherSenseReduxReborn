@@ -43,8 +43,10 @@ public class ButtplugClientTab: TabBase
             if (ImGui.InputText("Server Address", ref uri, 100))
                 _pluginConfiguration.Address = uri;
             ImGui.SameLine();
-            if (ImGui.Button("Save"))
+            if (ImGui.Button("Save")){
+                _buttplugWrapper.SaveDevicesToConfiguration();
                 Service.ConfigurationService.SaveServerConfiguration(_pluginConfiguration);
+            }
         }
     }
 
@@ -59,8 +61,8 @@ public class ButtplugClientTab: TabBase
 
     private void ListDevicesAndActuators()
     {
-        foreach (var kvp in _buttplugWrapper.Actuators){
-            ImGui.Text(kvp.Value.DisplayName);
+        foreach (var actuator in _buttplugWrapper.ConnectedActuators){
+            ImGui.Text(actuator.DisplayName);
         }
     }
 }

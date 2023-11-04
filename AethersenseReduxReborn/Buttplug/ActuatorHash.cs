@@ -1,50 +1,39 @@
-﻿using System;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
+﻿using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json.Serialization;
+using AethersenseReduxReborn.Misc;
 using Buttplug.Core.Messages;
 
 namespace AethersenseReduxReborn.Buttplug;
 
-public readonly struct ActuatorHash: IEquatable<ActuatorHash>
+public record ActuatorHash: Md5Hash
 {
-    public required ImmutableArray<byte> Value { get; init; }
+    public new static ActuatorHash Zeroed { get; }
 
-    public static ActuatorHash Unassigned { get; }
+    static ActuatorHash() { Zeroed = (Md5Hash.Zeroed as ActuatorHash)!; }
 
-    static ActuatorHash()
-    {
-        Unassigned = new ActuatorHash {
-            Value = ImmutableArray.CreateRange(new byte[16]),
-        };
-    }
+    [JsonConstructor]
+    public ActuatorHash(ImmutableArray<byte> value)
+        : base(value) { }
 
-    private static ActuatorHash ComputeHash(string deviceName, uint index, ActuatorType actuatorType, string description, uint steps)
-    {
-        var hashString = $"{deviceName}{index}{actuatorType}{description}{steps}";
-        var hash       = MD5.HashData(Encoding.UTF8.GetBytes(hashString));
-        Service.PluginLog.Debug("Computed hash {0} for actuator {1}", BitConverter.ToString(hash), hashString);
-        return new ActuatorHash {
-            Value = ImmutableArray.CreateRange(hash),
-        };
-    }
+    [SetsRequiredMembers]
+    public ActuatorHash(DeviceActuator actuator)
+        : this($"{actuator.OwnerDevice.Name}"
+             + $"{actuator.Index}"
+             + $"{actuator.ActuatorType}"
+             + $"{actuator.Description}"
+             + $"{actuator.Steps}") { }
 
-    public static ActuatorHash ComputeHash(DeviceActuator actuator) => ComputeHash(actuator.OwnerDevice.Name, actuator.Index, actuator.ActuatorType, actuator.Description, actuator.Steps);
+    [SetsRequiredMembers]
+    private ActuatorHash(string hashString)
+        : base(hashString) { }
 
-#region Overrides
+    public static ActuatorHash FromInternalAttribute(GenericDeviceMessageAttributes attribute, string deviceName) =>
+        new($"{deviceName}"
+          + $"{attribute.Index}"
+          + $"{attribute.ActuatorType}"
+          + $"{attribute.FeatureDescriptor}"
+          + $"{attribute.StepCount}");
 
-    public override bool Equals(object? obj) => obj is ActuatorHash other && this == other;
-
-    public override int GetHashCode() => Value.GetHashCode();
-
-    public static bool operator ==(ActuatorHash left, ActuatorHash right) => left.Value.AsSpan().SequenceEqual(right.Value.AsSpan());
-
-    public static bool operator !=(ActuatorHash left, ActuatorHash right) => !(left == right);
-
-    public bool Equals(ActuatorHash other) => this == other;
-
-    public override string ToString() => this == Unassigned ? "Unassigned" : BitConverter.ToString(Value.ToArray());
-
-#endregion
+    public override string ToString() => base.ToString();
 }
