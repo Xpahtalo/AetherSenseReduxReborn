@@ -25,8 +25,8 @@ public sealed class SignalService: IDisposable
         _buttplugWrapper                      =  buttplugWrapper;
         _signalPluginConfiguration            =  signalPluginConfiguration;
         Service.Framework.Update              += FrameworkUpdate;
-        _buttplugWrapper.ActuatorConnected    += ActuatorAdded;
-        _buttplugWrapper.ActuatorDisconnected += ActuatorRemoved;
+        _buttplugWrapper.ActuatorConnected    += ActuatorConnected;
+        _buttplugWrapper.ActuatorDisconnected += ActuatorDisconnected;
         _buttplugWrapper.ServerConnectedEvent += ServerConnected;
 
         ApplyConfiguration();
@@ -60,8 +60,8 @@ public sealed class SignalService: IDisposable
     public void Dispose()
     {
         Service.Framework.Update              -= FrameworkUpdate;
-        _buttplugWrapper.ActuatorConnected    -= ActuatorAdded;
-        _buttplugWrapper.ActuatorDisconnected -= ActuatorRemoved;
+        _buttplugWrapper.ActuatorConnected    -= ActuatorConnected;
+        _buttplugWrapper.ActuatorDisconnected -= ActuatorDisconnected;
         _buttplugWrapper.ServerConnectedEvent -= ServerConnected;
     }
 
@@ -96,7 +96,7 @@ public sealed class SignalService: IDisposable
         _testHash    = hash;
     }
 
-    private void ActuatorAdded(ActuatorAddedEventArgs args)
+    private void ActuatorConnected(ActuatorConnectedEventArgs args)
     {
         foreach (var signalGroup in SignalGroups){
             if (signalGroup.HashOfLastAssignedActuator == args.HashOfActuator)
@@ -104,7 +104,7 @@ public sealed class SignalService: IDisposable
         }
     }
 
-    private void ActuatorRemoved(ActuatorRemovedEventArgs args)
+    private void ActuatorDisconnected(ActuatorDisconnectedEventArgs args)
     {
         foreach (var signalGroup in SignalGroups){
             if (signalGroup.HashOfAssignedActuator == args.HashOfActuator)

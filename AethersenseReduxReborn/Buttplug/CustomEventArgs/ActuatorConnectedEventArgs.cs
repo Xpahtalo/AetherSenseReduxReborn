@@ -2,7 +2,7 @@
 
 namespace AethersenseReduxReborn.Buttplug.CustomEventArgs;
 
-public class ActuatorRemovedEventArgs: EventArgs
+public class ActuatorConnectedEventArgs: EventArgs
 {
     public required ActuatorHash HashOfActuator { get; init; }
 }

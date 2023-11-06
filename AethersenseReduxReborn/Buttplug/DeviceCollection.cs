@@ -13,10 +13,10 @@ public class DeviceCollection
 
     public IReadOnlyList<Device> KnownDevices => _devices.ToList().AsReadOnly();
 
-    public delegate void                        ActuatorConnectedEventHandler(ActuatorAddedEventArgs args);
+    public delegate void                        ActuatorConnectedEventHandler(ActuatorConnectedEventArgs args);
     public event ActuatorConnectedEventHandler? ActuatorConnected;
 
-    public delegate void                           ActuatorDisconnectedEventHandler(ActuatorRemovedEventArgs args);
+    public delegate void                           ActuatorDisconnectedEventHandler(ActuatorDisconnectedEventArgs args);
     public event ActuatorDisconnectedEventHandler? ActuatorDisconnected;
 
     public DeviceCollection(ButtplugPluginConfiguration configuration)
@@ -46,12 +46,12 @@ public class DeviceCollection
                 // Create and add a new device
                 var newDevice = new Device(buttplugDevice);
                 _devices.Add(newDevice);
-                InvokeActuatorAdded(newDevice);
+                InvokeActuatorConnected(newDevice);
             } else{
                 // Otherwise, try to assign to an existing device
                 try{
                     knownDevice.AssignInternalDevice(buttplugDevice);
-                    InvokeActuatorAdded(knownDevice);
+                    InvokeActuatorConnected(knownDevice);
                 } catch (ArgumentException ex){
                     Service.PluginLog.Error(ex, "Failed to assign internal device to known device.");
                 }
@@ -67,35 +67,40 @@ public class DeviceCollection
     {
         try{
             var knownDevice = _devices.Single(device => device.Name == clientDevice.Name);
-            knownDevice.RemoveInternalDevice();
-            InvokeActuatorRemoved(knownDevice);
+            DisconnectDevice(knownDevice);
         } catch (InvalidOperationException ex){
             Service.PluginLog.Error(ex, "Found more than one device with name {0}", clientDevice.Name);
         } catch (KeyNotFoundException ex){
             Service.PluginLog.Error(ex, "Found no device with name {0}", clientDevice.Name);
         }
     }
-
+    
     public void DisconnectAllDevices()
     {
         foreach (var device in _devices){
-            device.RemoveInternalDevice();
+            DisconnectDevice(device);
         }
     }
+    
+    public void DisconnectDevice(Device device)
+    {
+        device.RemoveInternalDevice();
+        InvokeActuatorDisconnected(device);
+    }
 
-    private void InvokeActuatorAdded(Device device)
+    private void InvokeActuatorConnected(Device device)
     {
         foreach (var actuator in device.Actuators){
-            ActuatorConnected?.Invoke(new ActuatorAddedEventArgs {
+            ActuatorConnected?.Invoke(new ActuatorConnectedEventArgs {
                 HashOfActuator = actuator.Hash,
             });
         }
     }
 
-    private void InvokeActuatorRemoved(Device device)
+    private void InvokeActuatorDisconnected(Device device)
     {
         foreach (var actuator in device.Actuators){
-            ActuatorDisconnected?.Invoke(new ActuatorRemovedEventArgs {
+            ActuatorDisconnected?.Invoke(new ActuatorDisconnectedEventArgs {
                 HashOfActuator = actuator.Hash,
             });
         }
