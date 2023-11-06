@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Serialization;
+﻿using AethersenseReduxReborn.Buttplug.Configs;
 using Buttplug.Core.Messages;
 
 namespace AethersenseReduxReborn.Buttplug;
@@ -16,14 +16,14 @@ public class DeviceActuator
     public string       DisplayName  => $"{OwnerDevice.Name} - {Index} - {ActuatorType} - {Description}";
     public bool         IsConnected  => OwnerDevice.IsConnected;
 
-    public DeviceActuator(SavedDeviceActuator savedActuator, Device ownerDevice)
+    public DeviceActuator(DeviceActuatorConfig actuatorConfig, Device ownerDevice)
     {
-        Index        = savedActuator.Index;
-        ActuatorType = savedActuator.ActuatorType;
-        Description  = savedActuator.Description;
-        Steps        = savedActuator.Steps;
+        Index        = actuatorConfig.Index;
+        ActuatorType = actuatorConfig.ActuatorType;
+        Description  = actuatorConfig.Description;
+        Steps        = actuatorConfig.Steps;
         OwnerDevice  = ownerDevice;
-        Hash         = savedActuator.Hash;
+        Hash         = actuatorConfig.Hash;
         Service.PluginLog.Debug("Created known actuator from config: {0} with hash {1}", DisplayName, Hash);
     }
 
@@ -52,39 +52,17 @@ public class DeviceActuator
         // Exact comparison is intentional.
         if (quantized == _previousValue)
             return (quantized, false);
-        Service.PluginLog.Debug("Quantized value {0} to {1}", value, quantized);
+        Service.PluginLog.Verbose("Quantized value {0} to {1}", value, quantized);
         _previousValue = quantized;
         return (quantized, true);
     }
-}
 
-public class SavedDeviceActuator
-{
-    public uint         Index        { get; set; }
-    public ActuatorType ActuatorType { get; set; }
-    public string       Description  { get; set; }
-    public uint         Steps        { get; set; }
-    public ActuatorHash Hash         { get; set; }
-    [JsonIgnore]
-    public string DisplayName => $"{Index} - {ActuatorType} - {Description}";
-
-    [JsonConstructor]
-    public SavedDeviceActuator(uint index, ActuatorType actuatorType, string description, uint steps, ActuatorHash hash)
-    {
-        Index        = index;
-        ActuatorType = actuatorType;
-        Description  = description;
-        Steps        = steps;
-        Hash         = hash;
-    }
-
-    public SavedDeviceActuator(DeviceActuator actuator)
-    {
-        Index        = actuator.Index;
-        ActuatorType = actuator.ActuatorType;
-        Description  = actuator.Description;
-        Steps        = actuator.Steps;
-        Hash         = actuator.Hash;
-        Service.PluginLog.Debug("Created saved actuator from actuator: {0}", DisplayName);
-    }
+    public DeviceActuatorConfig CreateConfig() =>
+        new() {
+            Index        = Index,
+            ActuatorType = ActuatorType,
+            Description  = Description,
+            Steps        = Steps,
+            Hash         = Hash,
+        };
 }

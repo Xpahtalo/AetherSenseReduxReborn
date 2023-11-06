@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 using System.Text.Json;
 
 namespace AethersenseReduxReborn.Configurations;
@@ -16,6 +17,8 @@ public class ConfigurationService
         LoadServerConfiguration();
         LoadSignalConfiguration();
     }
+
+    public void OpenConfigDirectory() { Process.Start("explorer.exe", _configDirectory); }
 
     public void LoadServerConfiguration()
     {

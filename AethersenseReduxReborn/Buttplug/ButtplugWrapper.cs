@@ -17,11 +17,11 @@ public sealed class ButtplugWrapper: IDisposable
     private readonly ButtplugClient              _buttplugClient;
     private readonly DeviceCollection            _deviceCollection;
 
-    public bool                          Connected          => _buttplugClient.Connected;
-    public IReadOnlyList<Device>         Devices            => _deviceCollection.KnownDevices;
-    public IReadOnlyList<Device>         ConnectedDevices   => Devices.Where(device => device.IsConnected).ToList().AsReadOnly();
-    public IReadOnlyList<DeviceActuator> Actuators          => Devices.SelectMany(device => device.Actuators).ToList().AsReadOnly();
-    public IEnumerable<DeviceActuator>   ConnectedActuators => ConnectedDevices.SelectMany(device => device.Actuators).ToList().AsReadOnly();
+    public bool                        Connected          => _buttplugClient.Connected;
+    public IEnumerable<Device>         Devices            => _deviceCollection.KnownDevices;
+    public IEnumerable<Device>         ConnectedDevices   => _deviceCollection.ConnectedDevices;
+    public IEnumerable<DeviceActuator> Actuators          => _deviceCollection.Actuators;
+    public IEnumerable<DeviceActuator> ConnectedActuators => _deviceCollection.ConnectedActuators;
 
     public delegate void                 ServerConnectedHandler(object? sender, EventArgs args);
     public event ServerConnectedHandler? ServerConnectedEvent;
@@ -85,9 +85,10 @@ public sealed class ButtplugWrapper: IDisposable
     {
         Service.PluginLog.Information("Saving devices to configuration.");
         _pluginConfiguration.SavedDevices.Clear();
-        foreach (var device in Devices){
-            _pluginConfiguration.SavedDevices.Add(new SavedDevice(device));
-        }
+        var deviceConfigs =
+            from device in Devices
+            select device.CreateConfig();
+        _pluginConfiguration.SavedDevices.AddRange(deviceConfigs);
         Service.ConfigurationService.SaveServerConfiguration(_pluginConfiguration);
     }
 

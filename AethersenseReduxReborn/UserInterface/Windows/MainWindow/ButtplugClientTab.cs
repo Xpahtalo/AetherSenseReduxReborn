@@ -48,6 +48,11 @@ public class ButtplugClientTab: TabBase
                 Service.ConfigurationService.SaveServerConfiguration(_pluginConfiguration);
             }
         }
+
+#if DEBUG
+        if (ImGui.Button("Open Config Directory"))
+            Service.ConfigurationService.OpenConfigDirectory();
+#endif
     }
 
     private void ConnectionButtons()
