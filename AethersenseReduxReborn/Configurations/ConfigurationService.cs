@@ -8,8 +8,8 @@ public class ConfigurationService
 {
     private readonly string _configDirectory;
 
-    public ButtplugPluginConfiguration PluginConfiguration       { get; private set; }
-    public SignalPluginConfiguration   SignalPluginConfiguration { get; private set; }
+    public ButtplugPluginConfiguration PluginConfiguration       { get; private set; } = null!;
+    public SignalPluginConfiguration   SignalPluginConfiguration { get; private set; } = null!;
 
     public ConfigurationService()
     {
@@ -25,26 +25,36 @@ public class ConfigurationService
         Service.PluginLog.Information("Loading server configuration.");
         var path = Path.Combine(_configDirectory, "server.json");
         if (!File.Exists(path)){
-            PluginConfiguration = new ButtplugPluginConfiguration();
+            PluginConfiguration = GetDefaultServerConfiguration();
             return;
         }
 
-        var json = File.ReadAllText(path);
-        PluginConfiguration = JsonSerializer.Deserialize<ButtplugPluginConfiguration>(json, Json.Options);
+        var json         = File.ReadAllText(path);
+        var loadedConfig = JsonSerializer.Deserialize<ButtplugPluginConfiguration>(json, Json.Options);
+        PluginConfiguration = loadedConfig ?? GetDefaultServerConfiguration();
+        return;
+
+        static ButtplugPluginConfiguration GetDefaultServerConfiguration() { return new ButtplugPluginConfiguration(); }
     }
+
 
     public void LoadSignalConfiguration()
     {
         Service.PluginLog.Information("Loading signal configuration.");
         var path = Path.Combine(_configDirectory, "signal.json");
         if (!File.Exists(path)){
-            SignalPluginConfiguration = SignalPluginConfiguration.GetDefaultConfiguration();
+            SignalPluginConfiguration = GetDefaultConfiguration();
             return;
         }
 
-        var json = File.ReadAllText(path);
-        SignalPluginConfiguration = JsonSerializer.Deserialize<SignalPluginConfiguration>(json, Json.Options);
+        var json         = File.ReadAllText(path);
+        var loadedConfig = JsonSerializer.Deserialize<SignalPluginConfiguration>(json, Json.Options);
+        SignalPluginConfiguration = loadedConfig ?? GetDefaultConfiguration();
+        return;
+
+        static SignalPluginConfiguration GetDefaultConfiguration() { return SignalPluginConfiguration.GetDefaultConfiguration(); }
     }
+
 
     public void SaveServerConfiguration(ButtplugPluginConfiguration pluginConfiguration)
     {
