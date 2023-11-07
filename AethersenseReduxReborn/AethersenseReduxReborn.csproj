@@ -2,7 +2,7 @@
 
     <PropertyGroup>
         <Authors>X'pahtalo</Authors>
-        <Version>0.0.1.4</Version>
+        <Version>0.0.1.5</Version>
         <PackageProjectUrl>https://github.com/Xpahtalo/AetherSenseReduxReborn</PackageProjectUrl>
         <Configurations>Debug;Release</Configurations>
     </PropertyGroup>
