@@ -11,7 +11,6 @@ namespace AethersenseReduxReborn;
 // ReSharper disable once ClassNeverInstantiated.Global
 public sealed class Plugin: IDalamudPlugin
 {
-    private readonly WindowManager   _windowManager;
     private readonly ButtplugWrapper _buttplugWrapper;
     private readonly SignalService   _signalService;
     public           string          Name => "Aethersense Redux Reborn";
@@ -27,12 +26,14 @@ public sealed class Plugin: IDalamudPlugin
                                           });
 
         Service.ConfigurationService = new ConfigurationService();
+        Service.WindowManager        = new WindowManager();
 
         _buttplugWrapper = new ButtplugWrapper(Name, Service.ConfigurationService.PluginConfiguration);
         _signalService   = new SignalService(_buttplugWrapper, Service.ConfigurationService.SignalPluginConfiguration);
 
-        _windowManager = new WindowManager();
-        _windowManager.AddWindow(MainWindow.Name, new MainWindow(_buttplugWrapper, _signalService));
+
+//        Service.WindowManager.AddWindow(MainWindow.Name, new MainWindow(_buttplugWrapper, _signalService));
+        Service.WindowManager.AddWindow(new MainWindow(_buttplugWrapper, _signalService));
 
         Service.PluginLog.Information(Service.PluginInterface.GetPluginConfigDirectory());
 
@@ -49,11 +50,11 @@ public sealed class Plugin: IDalamudPlugin
 
 #region UI Handlers
 
-    private void OnShowUI(string command, string args) { _windowManager.ToggleWindow(MainWindow.Name); }
+    private static void OnShowUI(string command, string args) => Service.WindowManager.ToggleWindow(MainWindow.Name);
 
-    private void DrawUi() { _windowManager.Draw(); }
+    private static void DrawUi() => Service.WindowManager.Draw();
 
-    private void DrawConfigUi() { _windowManager.ToggleWindow(MainWindow.Name); }
+    private static void DrawConfigUi() => Service.WindowManager.ToggleWindow(MainWindow.Name);
 
 #endregion
 }

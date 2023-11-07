@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using AethersenseReduxReborn.Configurations;
+using AethersenseReduxReborn.UserInterface;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.IoC;
 using Dalamud.Plugin;
@@ -26,5 +27,6 @@ public class Service
     [PluginService] public static IPluginLog             PluginLog       { get; private set; }
 
     public static ConfigurationService ConfigurationService { get; set; }
+    public static WindowManager        WindowManager        { get; set; }
 }
 #pragma warning restore CS8618
