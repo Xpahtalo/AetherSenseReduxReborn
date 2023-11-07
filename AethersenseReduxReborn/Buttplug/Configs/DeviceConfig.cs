@@ -4,6 +4,6 @@ namespace AethersenseReduxReborn.Buttplug.Configs;
 
 public class DeviceConfig
 {
-    public string                     Name      { get; set; }
-    public List<DeviceActuatorConfig> Actuators { get; set; }
+    public required string                     Name      { get; set; }
+    public required List<DeviceActuatorConfig> Actuators { get; set; }
 }
