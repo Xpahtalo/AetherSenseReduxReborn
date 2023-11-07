@@ -80,14 +80,14 @@ public class DeviceCollection
                 try{
                     knownDevice.AssignInternalDevice(buttplugDevice);
                     InvokeActuatorConnected(knownDevice);
-                } catch (ArgumentException ex){
-                    Service.PluginLog.Error(ex, "Failed to assign internal deviceConfig to known deviceConfig.");
+                } catch (ArgumentException e){
+                    Service.PluginLog.Error(e, "Failed to assign internal deviceConfig to known deviceConfig.");
                 }
             }
-        } catch (InvalidOperationException ex){
-            Service.PluginLog.Error(ex, "Found more than one deviceConfig with name {0}", buttplugDevice.Name);
-        } catch (Exception ex){
-            Service.PluginLog.Error(ex, "Failed to add new deviceConfig.");
+        } catch (InvalidOperationException e){
+            Service.PluginLog.Error(e, "Found more than one deviceConfig with name {0}", buttplugDevice.Name);
+        } catch (Exception e){
+            Service.PluginLog.Error(e, "Failed to add new deviceConfig.");
         }
     }
 
@@ -96,10 +96,10 @@ public class DeviceCollection
         try{
             var knownDevice = _devices.Single(device => device.Name == clientDevice.Name);
             DisconnectDevice(knownDevice);
-        } catch (InvalidOperationException ex){
-            Service.PluginLog.Error(ex, "Found more than one deviceConfig with name {0}", clientDevice.Name);
-        } catch (KeyNotFoundException ex){
-            Service.PluginLog.Error(ex, "Found no deviceConfig with name {0}", clientDevice.Name);
+        } catch (InvalidOperationException e){
+            Service.PluginLog.Error(e, "Found more than one deviceConfig with name {0}", clientDevice.Name);
+        } catch (KeyNotFoundException e){
+            Service.PluginLog.Error(e, "Found no deviceConfig with name {0}", clientDevice.Name);
         }
     }
 
@@ -132,5 +132,22 @@ public class DeviceCollection
                 HashOfActuator = actuator.Hash,
             });
         }
+    }
+
+    /// <summary>
+    ///     Returns the <see cref="DeviceActuator" /> with the given <see cref="ActuatorHash" />.
+    /// </summary>
+    /// <param name="hash">
+    ///     The <see cref="ActuatorHash">hash</see> of the <see cref="DeviceActuator">actuator</see> to search
+    ///     for.
+    /// </param>
+    /// <returns>The matching <see cref="DeviceActuator">actuator</see>, otherwise null.</returns>
+    public DeviceActuator? GetActuatorByHash(ActuatorHash hash)
+    {
+        var enumerable = Actuators;
+        // Guard against empty list
+        if (!enumerable.Any())
+            return null;
+        return Actuators.FirstOrDefault(actuator => actuator.Hash == hash);
     }
 }

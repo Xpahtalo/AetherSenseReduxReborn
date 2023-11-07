@@ -1,5 +1,6 @@
 ﻿using AethersenseReduxReborn.Buttplug;
 using AethersenseReduxReborn.Configurations;
+using AethersenseReduxReborn.Signals;
 using AethersenseReduxReborn.UserInterface;
 using AethersenseReduxReborn.UserInterface.Windows.MainWindow;
 using Dalamud.Game.Command;

@@ -42,16 +42,19 @@ public class Device
         Service.PluginLog.Debug("Created new deviceConfig from ButtplugClientDevice: {0}", Name);
     }
 
-    public void SendCommandToActuator(uint index, double value)
+    /// <summary>
+    ///     Sends an <see cref="ActuatorCommand" /> to the internal <see cref="ButtplugClientDevice" />.
+    /// </summary>
+    /// <param name="actuator">The actuator of the device to send to.</param>
+    /// <param name="command">The <see cref="ActuatorCommand" /> to send.</param>
+    public void SendCommandToActuator(DeviceActuator actuator, ActuatorCommand command)
     {
         if (_internalDevice == null)
             return;
 
-        var actuator = Actuators.Single(actuator => actuator.Index == index);
-
         // Only send the new value if it has changed enough to result in a new response from the deviceConfig. 
-        Service.PluginLog.Debug("Sending value {0:f2} to deviceConfig {1} actuator {2} - {3}", value, Name, actuator.Index, actuator.Description);
-        Task.Run(async () => await _internalDevice.ScalarAsync(new ScalarCmd.ScalarSubcommand(actuator.Index, value, actuator.ActuatorType)));
+        Service.PluginLog.Debug("Sending value {0} to deviceConfig {1} actuator {2} - {3}", command, Name, actuator.Index, actuator.Description);
+        Task.Run(async () => await _internalDevice.ScalarAsync(new ScalarCmd.ScalarSubcommand(actuator.Index, command.Value, actuator.ActuatorType)));
     }
 
     public void AssignInternalDevice(ButtplugClientDevice internalDevice)

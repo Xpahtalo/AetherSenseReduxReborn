@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using AethersenseReduxReborn.Buttplug;
+using AethersenseReduxReborn.Signals;
 using Dalamud.Interface.Windowing;
 using XpahtaLib.UserInterface.Tabs;
 

@@ -50,17 +50,36 @@ public sealed class ButtplugWrapper: IDisposable
         _buttplugClient.DeviceRemoved += DeviceRemoved;
     }
 
-    public void SendCommandToActuator(ActuatorHash hash, double value)
+    /// <summary>
+    ///     Send a command to an <see cref="DeviceActuator">actuator</see>, identified by its
+    ///     <see cref="ActuatorHash">hash</see>.
+    /// </summary>
+    /// <param name="hash">
+    ///     The <see cref="ActuatorHash">hash</see> of the <see cref="DeviceActuator">actuator</see> to send the
+    ///     command to.
+    /// </param>
+    /// <param name="command">
+    ///     The <see cref="ActuatorCommand" /> to send to the <see cref="DeviceActuator">actuator</see>
+    /// </param>
+    /// <exception cref="KeyNotFoundException">The <see cref="DeviceActuator">actuator</see> is not found.</exception>
+    /// <exception cref="InvalidOperationException">
+    ///     The <see cref="DeviceActuator">actuator</see> is found, but it is not
+    ///     connected so it cannot be sent commands.
+    /// </exception>
+    public void SendCommandToActuator(ActuatorHash hash, ActuatorCommand command)
     {
         try{
             var actuator = GetActuatorByHash(hash);
             if (actuator is null)
                 throw new KeyNotFoundException();
+
             if (!actuator.IsConnected)
                 throw new InvalidOperationException("Actuator is not connected.");
-            actuator.SendCommand(value);
-        } catch (KeyNotFoundException ex){
-            Service.PluginLog.Error(ex, "Could not locate actuator with hash {0}", hash);
+
+            actuator.SendCommand(command);
+        } catch (KeyNotFoundException e){
+            Service.PluginLog.Error(e, "Could not locate actuator with hash {0}", hash);
+            throw;
         }
     }
 
@@ -79,7 +98,8 @@ public sealed class ButtplugWrapper: IDisposable
                    : actuator.DisplayName;
     }
 
-    public DeviceActuator? GetActuatorByHash(ActuatorHash hash) => Actuators.SingleOrDefault(actuator => actuator.Hash == hash);
+    /// <inheritdoc cref="DeviceCollection.GetActuatorByHash" />
+    public DeviceActuator? GetActuatorByHash(ActuatorHash hash) => _deviceCollection.GetActuatorByHash(hash);
 
     public void SaveDevicesToConfiguration()
     {
@@ -104,8 +124,8 @@ public sealed class ButtplugWrapper: IDisposable
                                                             _buttplugCts.Token);
                          Service.PluginLog.Information("Connected to server.");
                          ServerConnectedEvent?.Invoke(this, EventArgs.Empty);
-                     } catch (Exception ex){
-                         Service.PluginLog.Error(ex, "Failed to connect to buttplug server.");
+                     } catch (Exception e){
+                         Service.PluginLog.Error(e, "Failed to connect to buttplug server.");
                      }
                  });
     }
@@ -135,8 +155,8 @@ public sealed class ButtplugWrapper: IDisposable
     {
         try{
             _deviceCollection.DisconnectButtplugDevice(args.Device);
-        } catch (Exception ex){
-            Service.PluginLog.Error(ex, "Unable to remove device from list of devices");
+        } catch (Exception e){
+            Service.PluginLog.Error(e, "Unable to remove device from list of devices");
         }
     }
 

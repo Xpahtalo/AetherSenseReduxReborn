@@ -5,7 +5,7 @@ namespace AethersenseReduxReborn.Buttplug;
 
 public class DeviceActuator
 {
-    private double _previousValue;
+    private ActuatorCommand _previousValue;
 
     public uint         Index        { get; }
     public ActuatorType ActuatorType { get; }
@@ -38,23 +38,15 @@ public class DeviceActuator
         Service.PluginLog.Debug("Created new actuator from ButtplugClientDevice: {0} with hash {1}", DisplayName, Hash);
     }
 
-    public void SendCommand(double value)
+    public void SendCommand(ActuatorCommand value)
     {
-        var (quantizedValue, shouldSend) = ProcessValue(value);
-        if (shouldSend)
-            OwnerDevice.SendCommandToActuator(Index, quantizedValue);
-    }
+        var quantized = value.Quantized(Steps);
 
-    private (double, bool) ProcessValue(double value)
-    {
-        var quantized = double.Round(Steps * value) / Steps;
-        // ReSharper disable once CompareOfFloatsByEqualityOperator
-        // Exact comparison is intentional.
         if (quantized == _previousValue)
-            return (quantized, false);
-        Service.PluginLog.Verbose("Quantized value {0} to {1}", value, quantized);
+            return;
+        Service.PluginLog.Verbose("New actuator command [{0}] is significantly different from previous command [{1}]. Sending.", quantized, _previousValue);
         _previousValue = quantized;
-        return (quantized, true);
+        OwnerDevice.SendCommandToActuator(this, new ActuatorCommand());
     }
 
     public DeviceActuatorConfig CreateConfig() =>

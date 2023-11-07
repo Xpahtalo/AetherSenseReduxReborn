@@ -73,6 +73,17 @@
 	<s:Boolean x:Key="/Default/Environment/SettingsMigration/IsMigratorApplied/=JetBrains_002EReSharper_002EPsi_002ECSharp_002ECodeStyle_002ECSharpPlaceEmbeddedOnSameLineMigration/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/Environment/SettingsMigration/IsMigratorApplied/=JetBrains_002EReSharper_002EPsi_002ECSharp_002ECodeStyle_002ECSharpUseContinuousIndentInsideBracesMigration/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/Environment/SettingsMigration/IsMigratorApplied/=JetBrains_002EReSharper_002EPsi_002ECSharp_002ECodeStyle_002ESettingsUpgrade_002EMigrateBlankLinesAroundFieldToBlankLinesAroundProperty/@EntryIndexedValue">True</s:Boolean>
+	<s:Boolean x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=DED7798D82D02045ABA68FC339C76DFA/Field/=MESSAGE/@KeyIndexDefined">True</s:Boolean>
+	<s:Int64 x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=DED7798D82D02045ABA68FC339C76DFA/Field/=MESSAGE/Order/@EntryValue">2</s:Int64>
+	<s:String x:Key="/Default/PatternsAndTemplates/LiveTemplates/Template/=DED7798D82D02045ABA68FC339C76DFA/Text/@EntryValue">try 
+{          
+  $SELECTION$
+}
+catch ($EXCEPTION$ $EX_NAME$)
+{
+  $SELSTART$Service.PluginLog.Error($EX_NAME$, "$MESSAGE$");
+  throw;$SELEND$
+}</s:String>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=Inflators/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=Lerp/@EntryIndexedValue">True</s:Boolean>
 	<s:Boolean x:Key="/Default/UserDictionary/Words/=Linkshell/@EntryIndexedValue">True</s:Boolean>
