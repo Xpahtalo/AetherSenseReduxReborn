@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using AethersenseReduxReborn.Buttplug;
-using AethersenseReduxReborn.Configurations;
 using AethersenseReduxReborn.Signals;
-using AethersenseReduxReborn.Signals.SignalGroup;
+using AethersenseReduxReborn.Signals.Configs;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
 using XIVChatTools;
@@ -17,8 +16,9 @@ namespace AethersenseReduxReborn.UserInterface.Windows.MainWindow;
 
 public class SignalGroupTab: TabBase
 {
-    private          SignalGroupConfiguration? _selectedSignalGroupConfig;
-    private readonly SignalPluginConfiguration _signalPluginConfiguration;
+    private readonly List<SignalGroupConfiguration> _tempSignalGroupConfigurations;
+
+    private SignalGroupConfiguration? _selectedSignalGroupConfig;
 
     private readonly SingleSelectionList<SignalGroupConfiguration> _signalGroupList;
     private readonly Button                                        _removeSignalGroupButton;
@@ -27,16 +27,13 @@ public class SignalGroupTab: TabBase
     private readonly Button                                        _applyConfigurationButton;
     private          SignalConfigChild?                            _signalConfigChild;
 
-    private readonly ButtplugWrapper _buttplugWrapper;
-    private readonly SignalService   _signalService;
-
     public override string Name => "Signal Groups";
 
     public SignalGroupTab(ButtplugWrapper buttplugWrapper, SignalService signalService)
     {
-        _buttplugWrapper           = buttplugWrapper;
-        _signalService             = signalService;
-        _signalPluginConfiguration = Service.ConfigurationService.SignalPluginConfiguration;
+        var buttplugWrapper1 = buttplugWrapper;
+        var signalService1   = signalService;
+        _tempSignalGroupConfigurations = signalService.GetSignalGroupConfigurations().ToList();
 
         _signalGroupList = new SingleSelectionList<SignalGroupConfiguration>("Signal Groups",
                                                                              config => config.Name,
@@ -46,7 +43,7 @@ public class SignalGroupTab: TabBase
                                                                                  _selectedSignalGroupConfig = selectedConfig;
                                                                                  if (_selectedSignalGroupConfig is not null){
                                                                                      Service.PluginLog.Debug("SignalGroupTab: Selected SignalGroupConfiguration: {0}", _selectedSignalGroupConfig.Name);
-                                                                                     _signalConfigChild = new SignalConfigChild(_selectedSignalGroupConfig, _signalService, _buttplugWrapper);
+                                                                                     _signalConfigChild = new SignalConfigChild(_selectedSignalGroupConfig, signalService1, buttplugWrapper1);
                                                                                  }
                                                                              });
         _removeSignalGroupButton = new Button("Remove",
@@ -54,12 +51,12 @@ public class SignalGroupTab: TabBase
                                               {
                                                   _signalConfigChild = null;
                                                   if (_selectedSignalGroupConfig is not null)
-                                                      _signalPluginConfiguration.SignalConfigurations.Remove(_selectedSignalGroupConfig);
+                                                      _tempSignalGroupConfigurations.Remove(_selectedSignalGroupConfig);
                                               });
         _addSignalGroupButton = new Button("Add",
                                            () =>
                                            {
-                                               _signalPluginConfiguration.SignalConfigurations.Add(new SignalGroupConfiguration {
+                                               _tempSignalGroupConfigurations.Add(new SignalGroupConfiguration {
                                                    CombineType   = CombineType.Max,
                                                    Name          = "New Signal Group",
                                                    SignalSources = new List<SignalSourceConfig>(),
@@ -69,10 +66,10 @@ public class SignalGroupTab: TabBase
         _saveConfigurationButton = new Button("Save",
                                               () =>
                                               {
-                                                  _buttplugWrapper.SaveDevicesToConfiguration();
-                                                  _signalService.SaveConfiguration();
+                                                  buttplugWrapper1.SaveDevicesToConfiguration();
+                                                  signalService1.SaveConfiguration(_tempSignalGroupConfigurations);
                                               });
-        _applyConfigurationButton = new Button("Apply", () => _signalService.ApplyConfiguration());
+        _applyConfigurationButton = new Button("Apply", () => signalService1.ApplyConfiguration(_tempSignalGroupConfigurations));
     }
 
     protected override void DrawTab()
@@ -93,7 +90,7 @@ public class SignalGroupTab: TabBase
                 X = ImGui.GetContentRegionAvail().X,
                 Y = (ImGui.GetContentRegionAvail().Y / ImGui.GetTextLineHeightWithSpacing() - 1) * ImGui.GetTextLineHeightWithSpacing(),
             };
-            _signalGroupList.Draw(_selectedSignalGroupConfig, _signalPluginConfiguration.SignalConfigurations, listRegion);
+            _signalGroupList.Draw(_selectedSignalGroupConfig, _tempSignalGroupConfigurations, listRegion);
 
 
             _removeSignalGroupButton.Draw();
@@ -203,7 +200,7 @@ internal class SignalConfigChild: ImGuiWidget
     {
         SignalSourceConfigEntry entry = config switch {
             ChatTriggerSignalConfig chatTriggerSignalConfig            => new ChatTriggerConfigEntry(chatTriggerSignalConfig, _signalService, _signalGroupConfiguration),
-            CharacterAttributeSignalConfig playerAttributeSignalConfig => new PlayerAttributeConfigEntry(playerAttributeSignalConfig, _signalService, _signalGroupConfiguration),
+            CharacterAttributeSignalConfig playerAttributeSignalConfig => new PlayerAttributeConfigEntry(playerAttributeSignalConfig, _signalService),
             _                                                          => throw new ArgumentOutOfRangeException(nameof(config), config, null),
         };
         _signalSourceConfigEntries.Add(entry);
@@ -213,16 +210,14 @@ internal class SignalConfigChild: ImGuiWidget
 
 internal abstract class SignalSourceConfigEntry: ImGuiWidget
 {
-    private readonly   TextInput                _nameInput;
-    protected readonly SignalService            _signalService;
-    protected readonly SignalGroupConfiguration _signalGroupConfiguration;
-    public readonly    SignalSourceConfig       SignalSourceConfig;
+    private readonly   TextInput          _nameInput;
+    protected readonly SignalService      SignalService;
+    public readonly    SignalSourceConfig SignalSourceConfig;
 
-    protected SignalSourceConfigEntry(SignalSourceConfig signalSourceConfig, SignalService signalService, SignalGroupConfiguration signalGroupConfiguration)
+    protected SignalSourceConfigEntry(SignalSourceConfig signalSourceConfig, SignalService signalService)
     {
-        SignalSourceConfig        = signalSourceConfig;
-        _signalService            = signalService;
-        _signalGroupConfiguration = signalGroupConfiguration;
+        SignalSourceConfig = signalSourceConfig;
+        SignalService      = signalService;
         _nameInput = new TextInput("Name",
                                    100,
                                    s => signalSourceConfig.Name = s);
@@ -249,7 +244,7 @@ internal class ChatTriggerConfigEntry: SignalSourceConfigEntry
 
 
     public ChatTriggerConfigEntry(ChatTriggerSignalConfig signalSourceConfig, SignalService signalService, SignalGroupConfiguration signalGroupConfiguration)
-        : base(signalSourceConfig, signalService, signalGroupConfiguration)
+        : base(signalSourceConfig, signalService)
     {
         _chatChannelCombo = new SingleSelectionCombo<Channel>("Chat Channel",
                                                               channel => XivChatTypeEx.ChannelFriendlyName[channel],
@@ -283,7 +278,7 @@ internal class ChatTriggerConfigEntry: SignalSourceConfigEntry
                                        i => signalSourceConfig.PatternConfig.Duration2 = i,
                                        50);
         _testPatternButton = new Button("Test",
-                                        () => _signalService.SetTestPattern(signalSourceConfig.PatternConfig, signalGroupConfiguration.HashOfLastAssignedActuator));
+                                        () => SignalService.SetTestPattern(signalSourceConfig.PatternConfig, signalGroupConfiguration.HashOfLastAssignedActuator));
     }
 
     public override void Draw()
@@ -337,8 +332,8 @@ internal class PlayerAttributeConfigEntry: SignalSourceConfigEntry
     private readonly SingleSelectionCombo<AttributeToTrack> _attributeToTrackCombo;
     private readonly SingleSelectionCombo<Correlation>      _correlationCombo;
 
-    public PlayerAttributeConfigEntry(CharacterAttributeSignalConfig signalSourceConfig, SignalService signalService, SignalGroupConfiguration signalGroupConfiguration)
-        : base(signalSourceConfig, signalService, signalGroupConfiguration)
+    public PlayerAttributeConfigEntry(CharacterAttributeSignalConfig signalSourceConfig, SignalService signalService)
+        : base(signalSourceConfig, signalService)
     {
         _playerNameInput = new TextInput("Character Name",
                                          20,

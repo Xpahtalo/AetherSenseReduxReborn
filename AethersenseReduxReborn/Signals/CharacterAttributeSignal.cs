@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using AethersenseReduxReborn.Signals.Configs;
 using Dalamud.Game.ClientState.Objects.Enums;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Objects.Types;
@@ -58,6 +59,14 @@ public sealed class CharacterAttributeSignal: SignalBase
             value = 1 - value;
         Value = value;
     }
+
+    public override SignalSourceConfig CreateConfig() =>
+        new CharacterAttributeSignalConfig {
+            Name             = Name,
+            CharacterName    = _characterName,
+            AttributeToTrack = _attributeToTrack,
+            Correlation      = _correlation,
+        };
 }
 
 internal enum CharacterSelection
@@ -65,20 +74,6 @@ internal enum CharacterSelection
     Target,
     Self,
     ByName,
-}
-
-public class CharacterAttributeSignalConfig: SignalSourceConfig
-{
-    public required string           CharacterName    { get; set; }
-    public required AttributeToTrack AttributeToTrack { get; set; }
-    public required Correlation      Correlation      { get; set; }
-
-    public static CharacterAttributeSignalConfig DefaultConfig() =>
-        new() {
-            CharacterName    = "",
-            AttributeToTrack = AttributeToTrack.Hp,
-            Correlation      = Correlation.Positive,
-        };
 }
 
 public enum AttributeToTrack

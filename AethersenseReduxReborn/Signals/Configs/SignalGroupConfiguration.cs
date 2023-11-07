@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using AethersenseReduxReborn.Buttplug;
 
-namespace AethersenseReduxReborn.Signals.SignalGroup;
+namespace AethersenseReduxReborn.Signals.Configs;
 
 public class SignalGroupConfiguration
 {

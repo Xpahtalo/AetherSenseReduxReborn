@@ -1,7 +1,5 @@
 using System.Collections.Generic;
-using System.Text.Json;
-using AethersenseReduxReborn.Signals;
-using AethersenseReduxReborn.Signals.SignalGroup;
+using AethersenseReduxReborn.Signals.Configs;
 using XIVChatTools;
 
 namespace AethersenseReduxReborn.Configurations;
@@ -28,11 +26,4 @@ public sealed class SignalPluginConfiguration
                 },
             },
         };
-
-    public SignalPluginConfiguration DeepCopy()
-    {
-        var config = JsonSerializer.Deserialize<SignalPluginConfiguration>(JsonSerializer.Serialize(this, Json.Options), Json.Options) ?? GetDefaultConfiguration();
-        Service.PluginLog.Debug(JsonSerializer.Serialize(config, Json.Options));
-        return config;
-    }
 }

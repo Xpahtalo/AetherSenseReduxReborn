@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using AethersenseReduxReborn.Buttplug;
+using AethersenseReduxReborn.Signals.Configs;
 
-namespace AethersenseReduxReborn.Signals.SignalGroup;
+namespace AethersenseReduxReborn.Signals;
 
 public sealed class SignalGroup: IDisposable
 {
     private bool         _enabled;
-    private ActuatorHash _hashOfAssignedActuator;
+    private ActuatorHash _hashOfAssignedActuator = null!;
 
     public string              Name          { get; set; }
     public CombineType         CombineType   { get; set; }
@@ -22,10 +23,10 @@ public sealed class SignalGroup: IDisposable
                 HashOfLastAssignedActuator = value;
         }
     }
-    public ActuatorHash HashOfLastAssignedActuator { get; set; }
+    public ActuatorHash HashOfLastAssignedActuator { get; private set; }
     public bool Enabled {
         get => _enabled;
-        set {
+        private set {
             Service.PluginLog.Debug(value ? "Enabling SignalGroup {0}" : "Disabling SignalGroup {0}", Name);
             _enabled = value;
         }
@@ -80,6 +81,20 @@ public sealed class SignalGroup: IDisposable
     {
         Service.PluginLog.Debug("Removing SignalSource from SignalGroup {0}", Name);
         SignalSources.Remove(signalSource);
+    }
+
+    public SignalGroupConfiguration CreateConfiguration()
+    {
+        var signalSourceConfigs =
+            from signalSource in SignalSources
+            select signalSource.CreateConfig();
+
+        return new SignalGroupConfiguration {
+            Name                       = Name,
+            CombineType                = CombineType,
+            HashOfLastAssignedActuator = HashOfLastAssignedActuator,
+            SignalSources              = signalSourceConfigs.ToList(),
+        };
     }
 
     public void Enable() => Enable(HashOfLastAssignedActuator);

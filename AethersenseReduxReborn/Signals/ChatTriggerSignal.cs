@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.RegularExpressions;
+using AethersenseReduxReborn.Signals.Configs;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using XIVChatTools;
@@ -12,7 +13,7 @@ public class ChatTriggerSignal: SignalBase
     private readonly Regex               _regex;
     private readonly Channel             _chatChannel;
     private readonly SimplePatternConfig _patternConfig;
-    
+
     public ChatTriggerSignal(ChatTriggerSignalConfig config)
         : base(config)
     {
@@ -38,10 +39,18 @@ public class ChatTriggerSignal: SignalBase
                 return;
             Service.PluginLog.Debug("Regex match found, triggering pattern");
             TriggerPattern();
-        } catch (Exception ex){
-            Service.PluginLog.Error(ex, "Error while matching regex");
+        } catch (Exception e){
+            Service.PluginLog.Error(e, "Error while matching regex");
         }
     }
+
+    public override SignalSourceConfig CreateConfig() =>
+        new ChatTriggerSignalConfig {
+            Name          = Name,
+            RegexPattern  = _regex.ToString(),
+            ChatType      = _chatChannel,
+            PatternConfig = _patternConfig,
+        };
 
     protected override void Dispose(bool disposing)
     {
@@ -62,18 +71,4 @@ public class ChatTriggerSignal: SignalBase
     }
 
     private void TriggerPattern() => _currentPattern = SimplePattern.CreatePatternFromConfig(_patternConfig);
-}
-
-public class ChatTriggerSignalConfig: SignalSourceConfig
-{
-    public required string              RegexPattern  { get; set; }
-    public required Channel             ChatType      { get; set; }
-    public required SimplePatternConfig PatternConfig { get; set; }
-
-    public static ChatTriggerSignalConfig DefaultConfig() =>
-        new() {
-            PatternConfig = SimplePatternConfig.DefaultConstantPattern(),
-            RegexPattern  = "",
-            ChatType      = Channel.Action,
-        };
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using AethersenseReduxReborn.Signals.Configs;
 
 namespace AethersenseReduxReborn.Signals;
 
@@ -16,6 +17,8 @@ public abstract class SignalBase: ISignalSource
     protected SignalBase(SignalSourceConfig config) { Name = config.Name; }
 
     public abstract void Update(double elapsedMilliseconds);
+
+    public abstract SignalSourceConfig CreateConfig();
 
     protected virtual void Dispose(bool disposing)
     {
