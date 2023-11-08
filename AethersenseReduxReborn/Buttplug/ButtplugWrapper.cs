@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AethersenseReduxReborn.Buttplug.CustomEventArgs;
 using AethersenseReduxReborn.Configurations;
 using Buttplug.Client;
 using Buttplug.Client.Connectors.WebsocketConnector;
@@ -106,8 +107,6 @@ public sealed class ButtplugWrapper: IDisposable
         Service.ConfigurationService.SaveServerConfiguration(_pluginConfiguration);
     }
 
-#region ButtplugClient passthrough
-
     public void Connect()
     {
         Task.Run(async () =>
@@ -153,8 +152,6 @@ public sealed class ButtplugWrapper: IDisposable
             Service.PluginLog.Error(e, "Unable to remove device from list of devices");
         }
     }
-
-#endregion
 
     public void Dispose()
     {

@@ -12,29 +12,17 @@ public class DeviceCollection
 {
     private readonly HashSet<Device> _devices = new();
 
-    /// <summary>
-    ///     All <see cref="Device">devices</see> in the collection.
-    /// </summary>
     public IEnumerable<Device> KnownDevices => from device in _devices
                                                select device;
 
-    /// <summary>
-    ///     Only <see cref="Device">devices</see> that are currently connected.
-    /// </summary>
     public IEnumerable<Device> ConnectedDevices => from device in _devices
                                                    where device.IsConnected
                                                    select device;
 
-    /// <summary>
-    ///     All actuators of all <see cref="Device">devices</see> in the collection.
-    /// </summary>
     public IEnumerable<DeviceActuator> Actuators => from device in _devices
                                                     from actuator in device.Actuators
                                                     select actuator;
 
-    /// <summary>
-    ///     Only <see cref="DeviceActuator">actuators</see> of <see cref="Device">devices</see> that are currently connected.
-    /// </summary>
     public IEnumerable<DeviceActuator> ConnectedActuators => from device in _devices
                                                              where device.IsConnected
                                                              from actuator in device.Actuators
@@ -129,15 +117,7 @@ public class DeviceCollection
             });
         }
     }
-
-    /// <summary>
-    ///     Returns the <see cref="DeviceActuator" /> with the given <see cref="ActuatorHash" />.
-    /// </summary>
-    /// <param name="hash">
-    ///     The <see cref="ActuatorHash">hash</see> of the <see cref="DeviceActuator">actuator</see> to search
-    ///     for.
-    /// </param>
-    /// <returns>The matching <see cref="DeviceActuator">actuator</see>, otherwise null.</returns>
+    
     public DeviceActuator? GetActuatorByHash(ActuatorHash hash)
     {
         var enumerable = Actuators;
