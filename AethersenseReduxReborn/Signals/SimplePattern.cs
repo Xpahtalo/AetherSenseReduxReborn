@@ -45,8 +45,9 @@ public class SimplePattern
             SimplePatternType.Random   => Lerp(_intensity1, _intensity2, Random.Shared.NextDouble()),
             _                          => 0,
         };
-        Service.PluginLog.Verbose("time:{0}, weight:{1}, value:{2}", _elapsedTime, weight, value);
-        return new SignalOutput(value);
+        var output = new SignalOutput(value);
+        Service.PluginLog.Verbose("time:{0}, weight:{1}, value:{2}", _elapsedTime, weight, output);
+        return output;
     }
 
     private static T Lerp<T>(T start, T end, T weight)
