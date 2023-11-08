@@ -12,8 +12,8 @@ public class DeviceCollection
 {
     private readonly HashSet<Device> _devices = new();
 
-    public IEnumerable<Device> KnownDevices => from device in _devices
-                                               select device;
+    public IEnumerable<Device> Devices => from device in _devices
+                                          select device;
 
     public IEnumerable<Device> ConnectedDevices => from device in _devices
                                                    where device.IsConnected
@@ -51,34 +51,31 @@ public class DeviceCollection
 
     public void AddNewButtplugDevice(ButtplugClientDevice buttplugDevice)
     {
-        try{
-            var knownDevice = _devices.SingleOrDefault(device => device.Name == buttplugDevice.Name);
-            // If it doesn't exist
-            if (knownDevice is null){
-                // Create and add a new deviceConfig
-                var newDevice = new Device(buttplugDevice);
-                _devices.Add(newDevice);
-                InvokeActuatorConnected(newDevice);
-            } else{
-                // Otherwise, try to assign to an existing deviceConfig
-                try{
-                    knownDevice.AssignInternalDevice(buttplugDevice);
-                    InvokeActuatorConnected(knownDevice);
-                } catch (ArgumentException e){
-                    Service.PluginLog.Error(e, "Failed to assign internal deviceConfig to known deviceConfig.");
-                }
-            }
-        } catch (InvalidOperationException e){
-            Service.PluginLog.Error(e, "Found more than one deviceConfig with name {0}", buttplugDevice.Name);
-        } catch (Exception e){
-            Service.PluginLog.Error(e, "Failed to add new deviceConfig.");
+        var deviceName     = buttplugDevice.Name;
+        var existingDevice = Devices.FirstOrDefault(device => device.Name == deviceName);
+        var actuatorHashes = from attribute in buttplugDevice.GetGenericDeviceMessageAttributes()
+                             select new ActuatorHash(attribute, deviceName);
+        var conflictingHashes = Actuators.Select(actuator => actuator.Hash).Intersect(actuatorHashes);
+        var actuatorConflict  = conflictingHashes.Any();
+
+        if (actuatorConflict){
+            Service.PluginLog.Error("Tried to add new buttplug device, but found conflicting actuator hashes. {0}", conflictingHashes);
+            return;
+        }
+        if (existingDevice is not null){
+            existingDevice.AssignInternalDevice(buttplugDevice);
+            InvokeActuatorConnectedOnDevice(existingDevice);
+        } else{
+            var newDevice = new Device(buttplugDevice);
+            _devices.Add(newDevice);
+            InvokeActuatorConnectedOnDevice(newDevice);
         }
     }
 
     public void DisconnectButtplugDevice(ButtplugClientDevice clientDevice)
     {
         try{
-            var knownDevice = _devices.Single(device => device.Name == clientDevice.Name);
+            var knownDevice = Devices.First(device => device.Name == clientDevice.Name);
             DisconnectDevice(knownDevice);
         } catch (InvalidOperationException e){
             Service.PluginLog.Error(e, "Found more than one deviceConfig with name {0}", clientDevice.Name);
@@ -89,7 +86,7 @@ public class DeviceCollection
 
     public void DisconnectAllDevices()
     {
-        foreach (var device in _devices){
+        foreach (var device in Devices){
             DisconnectDevice(device);
         }
     }
@@ -97,27 +94,37 @@ public class DeviceCollection
     public void DisconnectDevice(Device device)
     {
         device.RemoveInternalDevice();
-        InvokeActuatorDisconnected(device);
+        InvokeActuatorDisconnectedOnDevice(device);
     }
 
-    private void InvokeActuatorConnected(Device device)
+    private void InvokeActuatorConnectedOnDevice(Device device)
     {
         foreach (var actuator in device.Actuators){
-            ActuatorConnected?.Invoke(new ActuatorConnectedEventArgs {
-                HashOfActuator = actuator.Hash,
-            });
+            InvokeActuatorConnected(actuator);
         }
     }
 
-    private void InvokeActuatorDisconnected(Device device)
+    private void InvokeActuatorConnected(DeviceActuator actuator)
+    {
+        ActuatorConnected?.Invoke(new ActuatorConnectedEventArgs {
+            HashOfActuator = actuator.Hash,
+        });
+    }
+
+    private void InvokeActuatorDisconnectedOnDevice(Device device)
     {
         foreach (var actuator in device.Actuators){
-            ActuatorDisconnected?.Invoke(new ActuatorDisconnectedEventArgs {
-                HashOfActuator = actuator.Hash,
-            });
+            InvokeActuatorDisconnected(actuator);
         }
     }
-    
+
+    private void InvokeActuatorDisconnected(DeviceActuator actuator)
+    {
+        ActuatorDisconnected?.Invoke(new ActuatorDisconnectedEventArgs {
+            HashOfActuator = actuator.Hash,
+        });
+    }
+
     public DeviceActuator? GetActuatorByHash(ActuatorHash hash)
     {
         var enumerable = Actuators;

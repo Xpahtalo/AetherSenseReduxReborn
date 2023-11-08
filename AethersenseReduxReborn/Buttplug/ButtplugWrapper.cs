@@ -19,7 +19,7 @@ public sealed class ButtplugWrapper: IDisposable
     private readonly DeviceCollection            _deviceCollection;
 
     public bool                        Connected          => _buttplugClient.Connected;
-    public IEnumerable<Device>         Devices            => _deviceCollection.KnownDevices;
+    public IEnumerable<Device>         Devices            => _deviceCollection.Devices;
     public IEnumerable<Device>         ConnectedDevices   => _deviceCollection.ConnectedDevices;
     public IEnumerable<DeviceActuator> Actuators          => _deviceCollection.Actuators;
     public IEnumerable<DeviceActuator> ConnectedActuators => _deviceCollection.ConnectedActuators;

@@ -31,12 +31,13 @@ public record ActuatorHash: Md5Hash
     private ActuatorHash(string hashString)
         : base(hashString) { }
 
-    public static ActuatorHash FromInternalAttribute(GenericDeviceMessageAttributes attribute, string deviceName) =>
-        new($"{deviceName}"
-          + $"{attribute.Index}"
-          + $"{attribute.ActuatorType}"
-          + $"{attribute.FeatureDescriptor}"
-          + $"{attribute.StepCount}");
+    [SetsRequiredMembers]
+    public ActuatorHash(GenericDeviceMessageAttributes attribute, string deviceName)
+        : this($"{deviceName}"
+             + $"{attribute.Index}"
+             + $"{attribute.ActuatorType}"
+             + $"{attribute.FeatureDescriptor}"
+             + $"{attribute.StepCount}") { }
 
     public override string ToString() => base.ToString();
 }

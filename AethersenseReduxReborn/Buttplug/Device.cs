@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Threading.Tasks;
 using AethersenseReduxReborn.Buttplug.Configs;
 using Buttplug.Client;
@@ -15,8 +14,8 @@ public class Device
 
     public string               Name        { get; set; }
     public List<DeviceActuator> Actuators   { get; }
-    public bool                 IsConnected => _internalDevice != null;
-    public string               DisplayName => Name; 
+    public bool                 IsConnected => _internalDevice is not null;
+    public string               DisplayName => Name;
 
     public Device(DeviceConfig deviceConfig)
     {
@@ -33,9 +32,7 @@ public class Device
         _internalDevice = internalDevice;
         Name            = internalDevice.Name;
         var internalList = new List<GenericDeviceMessageAttributes>();
-        foreach (ActuatorType actuatorType in Enum.GetValues(typeof(ActuatorType))){
-            internalList.AddRange(_internalDevice.GenericAcutatorAttributes(actuatorType));
-        }
+        internalList.AddRange(_internalDevice.GetGenericDeviceMessageAttributes());
 
         Actuators = new List<DeviceActuator>();
         foreach (var actuator in internalList){
@@ -72,7 +69,7 @@ public class Device
         // Check that all actuators in the internal deviceConfig match actuators in the saved deviceConfig.
         foreach (var hash in from ActuatorType actuatorType in Enum.GetValues(typeof(ActuatorType))
                              from actuatorAttribute in _internalDevice.GenericAcutatorAttributes(actuatorType)
-                             select ActuatorHash.FromInternalAttribute(actuatorAttribute, Name) into hash
+                             select new ActuatorHash(actuatorAttribute, Name) into hash
                              where Actuators.All(actuator => actuator.Hash != hash) select hash){
             throw new ArgumentException($"Internal deviceConfig has actuator with hash {hash} that does not match any known actuator.");
         }
