@@ -1,5 +1,7 @@
 ﻿using AethersenseReduxReborn.Buttplug;
 using AethersenseReduxReborn.Configurations;
+using Dalamud.Interface.Colors;
+using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
 using XpahtaLib.UserInterface.Tabs;
 
@@ -42,11 +44,11 @@ public class ButtplugClientTab: TabBase
             var uri = _pluginConfiguration.Address;
             if (ImGui.InputText("Server Address", ref uri, 100))
                 _pluginConfiguration.Address = uri;
-            ImGui.SameLine();
-            if (ImGui.Button("Save")){
-                _buttplugWrapper.SaveDevicesToConfiguration();
-                Service.ConfigurationService.SaveServerConfiguration(_pluginConfiguration);
-            }
+        }
+        ImGui.SameLine();
+        if (ImGui.Button("Save")){
+            _buttplugWrapper.SaveDevicesToConfiguration();
+            Service.ConfigurationService.SaveServerConfiguration(_pluginConfiguration);
         }
 
 #if DEBUG
@@ -66,8 +68,15 @@ public class ButtplugClientTab: TabBase
 
     private void ListDevicesAndActuators()
     {
-        foreach (var actuator in _buttplugWrapper.ConnectedActuators){
-            ImGui.Text(actuator.DisplayName);
+        ImGui.Text("Saved and Connected devices:");
+        
+        foreach (var device in _buttplugWrapper.Devices){
+            var       color = device.IsConnected ? ImGuiColors.DalamudWhite : ImGuiColors.DalamudGrey;
+            using var _     = new ImRaii.Color().Push(ImGuiCol.Text, color);
+            ImGui.Text(device.DisplayName);
+            foreach (var deviceActuator in device.Actuators){
+                ImGui.BulletText(deviceActuator.DisplayAttributes);
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using AethersenseReduxReborn.Buttplug.Configs;
 using Buttplug.Client;
@@ -15,6 +16,7 @@ public class Device
     public string               Name        { get; set; }
     public List<DeviceActuator> Actuators   { get; }
     public bool                 IsConnected => _internalDevice != null;
+    public string               DisplayName => Name; 
 
     public Device(DeviceConfig deviceConfig)
     {

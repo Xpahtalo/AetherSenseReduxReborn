@@ -7,14 +7,15 @@ public class DeviceActuator
 {
     private ActuatorCommand _previousValue;
 
-    public uint         Index        { get; }
-    public ActuatorType ActuatorType { get; }
-    public string       Description  { get; }
-    public uint         Steps        { get; }
-    public ActuatorHash Hash         { get; }
-    public Device       OwnerDevice  { get; }
-    public string       DisplayName  => $"{OwnerDevice.Name} - {Index} - {ActuatorType} - {Description}";
-    public bool         IsConnected  => OwnerDevice.IsConnected;
+    public uint         Index             { get; }
+    public ActuatorType ActuatorType      { get; }
+    public string       Description       { get; }
+    public uint         Steps             { get; }
+    public ActuatorHash Hash              { get; }
+    public Device       OwnerDevice       { get; }
+    public string       DisplayAttributes => $"{Index} - {ActuatorType} - {Description}";
+    public string       DisplayName       => $"{OwnerDevice.Name} - {DisplayAttributes}";
+    public bool         IsConnected       => OwnerDevice.IsConnected;
 
     public DeviceActuator(DeviceActuatorConfig actuatorConfig, Device ownerDevice)
     {
