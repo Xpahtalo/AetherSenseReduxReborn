@@ -40,11 +40,7 @@ public class DeviceCollection
                                                              from actuator in device.Actuators
                                                              select actuator;
 
-
-    public delegate void                        ActuatorConnectedEventHandler(ActuatorConnectedEventArgs args);
-    public event ActuatorConnectedEventHandler? ActuatorConnected;
-
-    public delegate void                           ActuatorDisconnectedEventHandler(ActuatorDisconnectedEventArgs args);
+    public event ActuatorConnectedEventHandler?    ActuatorConnected;
     public event ActuatorDisconnectedEventHandler? ActuatorDisconnected;
 
     public DeviceCollection(ButtplugPluginConfiguration configuration)

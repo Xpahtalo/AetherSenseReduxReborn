@@ -26,17 +26,11 @@ public sealed class ButtplugWrapper: IDisposable
     public delegate void                 ServerConnectedHandler(object? sender, EventArgs args);
     public event ServerConnectedHandler? ServerConnectedEvent;
 
-    /// <summary>
-    ///     Called when an <see cref="DeviceActuator" /> has been connected to the server.
-    /// </summary>
-    public event DeviceCollection.ActuatorConnectedEventHandler? ActuatorConnected {
+    public event ActuatorConnectedEventHandler? ActuatorConnected {
         add => _deviceCollection.ActuatorConnected += value;
         remove => _deviceCollection.ActuatorConnected -= value;
     }
-    /// <summary>
-    ///     Called when an <see cref="DeviceActuator" /> has been disconnected from the server.
-    /// </summary>
-    public event DeviceCollection.ActuatorDisconnectedEventHandler? ActuatorDisconnected {
+    public event ActuatorDisconnectedEventHandler? ActuatorDisconnected {
         add => _deviceCollection.ActuatorDisconnected += value;
         remove => _deviceCollection.ActuatorDisconnected -= value;
     }
