@@ -46,7 +46,7 @@ public class DeviceActuator
             return;
         Service.PluginLog.Verbose("New actuator command [{0}] is significantly different from previous command [{1}]. Sending.", quantized, _previousValue);
         _previousValue = quantized;
-        OwnerDevice.SendCommandToActuator(this, new ActuatorCommand());
+        OwnerDevice.SendCommandToActuator(this, quantized);
     }
 
     public DeviceActuatorConfig CreateConfig() =>
