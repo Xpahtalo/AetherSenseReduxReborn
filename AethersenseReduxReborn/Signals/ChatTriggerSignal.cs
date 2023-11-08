@@ -26,21 +26,20 @@ public class ChatTriggerSignal: SignalBase
 
     private void OnChatMessageReceived(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
-        var decode  = XivChatTypeEx.Decode((uint)type);
-        var channel = decode.Item3;
+        var channelDescriptor = type.GetChannelDescriptor();
 
-        Service.PluginLog.Verbose("Chat message received from [{0}], [{1}], [{2}]", decode.Item1, decode.Item2, decode.Item3);
-        if (channel != _chatChannel)
+        Service.PluginLog.Verbose("Chat message received.\nTrigger: {0}\n{1}", Name, channelDescriptor);
+        if (channelDescriptor.Channel != _chatChannel)
             return;
         try{
             Service.PluginLog.Verbose("Evaluating string regex [{0}] against [{1}]", _regex, message.TextValue);
             var match = _regex.Match(message.TextValue);
             if (!match.Success)
                 return;
-            Service.PluginLog.Debug("Regex match found, triggering pattern");
+            Service.PluginLog.Debug("Regex match found, triggering pattern.\nTrigger: {0}", Name);
             TriggerPattern();
         } catch (Exception e){
-            Service.PluginLog.Error(e, "Error while matching regex");
+            Service.PluginLog.Error(e, "Exception while matching regex");
         }
     }
 
