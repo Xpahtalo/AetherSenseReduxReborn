@@ -31,11 +31,7 @@ public sealed class Plugin: IDalamudPlugin
         _buttplugWrapper = new ButtplugWrapper(Name, Service.ConfigurationService.PluginConfiguration);
         _signalService   = new SignalService(_buttplugWrapper, Service.ConfigurationService.SignalPluginConfiguration);
 
-
-//        Service.WindowManager.AddWindow(MainWindow.Name, new MainWindow(_buttplugWrapper, _signalService));
         Service.WindowManager.AddWindow(new MainWindow(_buttplugWrapper, _signalService));
-
-        Service.PluginLog.Information(Service.PluginInterface.GetPluginConfigDirectory());
 
         Service.PluginInterface.UiBuilder.Draw         += DrawUi;
         Service.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUi;
@@ -48,13 +44,9 @@ public sealed class Plugin: IDalamudPlugin
         _buttplugWrapper.Dispose();
     }
 
-#region UI Handlers
-
     private static void OnShowUI(string command, string args) => Service.WindowManager.ToggleWindow(MainWindow.Name);
 
     private static void DrawUi() => Service.WindowManager.Draw();
 
     private static void DrawConfigUi() => Service.WindowManager.ToggleWindow(MainWindow.Name);
-
-#endregion
 }
