@@ -14,59 +14,58 @@ namespace AethersenseReduxReborn.UserInterface.Windows;
 
 public class RegexHelper: Window
 {
-    private bool   _editing   = true;
-    private string _regexText = string.Empty;
-    private Regex? _regex     = new(string.Empty);
-    private string RegexText {
-        get => _regexText;
+    private bool Editing { get; set; } = true;
+    private string TextToTest {
+        get => _textToTest;
         set {
-            _regexText = value;
+            _textToTest      = value;
+            TextToTestAsList = SplitAtNewLines(_textToTest);
+        }
+    }
+    private string RegexPattern {
+        get => _regexPattern;
+        set {
+            _regexPattern = value;
             try{
-                _regex = new Regex(_regexText);
+                Regex = new Regex(_regexPattern);
             } catch{
-                _regex = null;
+                Regex = null;
             }
         }
     }
-    private bool RegexIsValid => _regex is not null;
+    private Regex?              Regex            { get; set; } = new(string.Empty);
+    private bool                RegexIsValid     => Regex is not null;
+    private IEnumerable<string> TextToTestAsList { get; set; } = Array.Empty<string>();
 
-    private string              _testText = string.Empty;
-    private IEnumerable<string> _testLines;
-    private string TestText {
-        get => _testText;
-        set {
-            _testText  = value;
-            _testLines = SplitAtNewLines(_testText);
-        }
-    }
+    private string _regexPattern = string.Empty;
+    private string _textToTest   = string.Empty;
 
-    private readonly float _yForStaticElements = ImGui.GetTextLineHeightWithSpacing() * 8;
-
+    private readonly float              _yForStaticElements = ImGui.GetTextLineHeightWithSpacing() * 8;
     private readonly Button             _editButton;
     private readonly MultiLineTextInput _testInput;
     private readonly TextInput          _regexInput;
     private readonly Button             _confirmButton;
 
-    private const ImGuiWindowFlags _flags = ImGuiWindowFlags.AlwaysAutoResize;
+    private const ImGuiWindowFlags WindowFlags = ImGuiWindowFlags.AlwaysAutoResize;
 
     public RegexHelper(string name, Action<string> confirmed, bool forceMainWindow = false)
-        : base(name, _flags, forceMainWindow)
+        : base(name, WindowFlags, forceMainWindow)
     {
         _editButton = new Button("Edit",
-                                 () => _editing = !_editing);
+                                 () => Editing = !Editing);
         _testInput = new MultiLineTextInput("",
-                                            text => TestText = text,
+                                            text => TextToTest = text,
                                             2000,
                                             cleanClipboard: true);
 
         _regexInput = new TextInput("",
                                     2000,
-                                    text => RegexText = text);
+                                    text => RegexPattern = text);
 
         _confirmButton = new Button("Confirm",
                                     () =>
                                     {
-                                        confirmed.Invoke(RegexText);
+                                        confirmed.Invoke(RegexPattern);
                                         Service.WindowManager.RemoveWindow(this);
                                     });
 
@@ -84,20 +83,12 @@ public class RegexHelper: Window
 
     public override void Draw()
     {
-        if (_editing)
+        if (Editing)
             DrawEditing();
         else
             DrawTesting();
         ImGui.Separator();
-
-        ImGui.Text("Enter your regex below.");
-        _regexInput.Draw(RegexText);
-        if (!RegexIsValid){
-            ImGui.SameLine();
-            ImGui.TextColored(ImGuiColors.DPSRed, "(!)");
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip("Invalid Regex");
-        }
+        DrawRegexSection();
         _confirmButton.Draw();
     }
 
@@ -108,7 +99,7 @@ public class RegexHelper: Window
                    When you are done, Click "Done" to change to testing mode.
                    """);
         _editButton.Draw("Done");
-        _testInput.Draw(TestText);
+        _testInput.Draw(TextToTest);
     }
 
     private void DrawTesting()
@@ -118,14 +109,26 @@ public class RegexHelper: Window
                    Click "Edit" to change back to editing mode.
                    """);
         _editButton.Draw("Edit");
-        foreach (var line in _testLines){
-            var color = _regex is not null
-                            ? _regex.IsMatch(line)
+        foreach (var line in TextToTestAsList){
+            var color = Regex is not null
+                            ? Regex.IsMatch(line)
                                   ? ImGuiColors.HealerGreen
                                   : ImGuiColors.DPSRed
                             : ImGuiColors.DalamudWhite;
             using var style = ImRaii.PushColor(ImGuiCol.Text, color);
             ImGui.Text(line);
+        }
+    }
+
+    private void DrawRegexSection()
+    {
+        ImGui.Text("Enter your regex below.");
+        _regexInput.Draw(RegexPattern);
+        if (!RegexIsValid){
+            ImGui.SameLine();
+            ImGui.TextColored(ImGuiColors.DPSRed, "(!)");
+            if (ImGui.IsItemHovered())
+                ImGui.SetTooltip("Invalid Regex");
         }
     }
 
