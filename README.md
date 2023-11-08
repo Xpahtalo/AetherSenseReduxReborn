@@ -2,6 +2,9 @@
 
 Turn your Warrior of Light into the Warrior of Butt with regex-powered realtime log parsing. Configure custom vibration patterns for game controllers, bluetooth-enabled sex toys, and more!
 
+### Discord
+https://discord.gg/RMCxcB8cgq
+
 ### Installation
 
 Add `https://raw.githubusercontent.com/Xpahtalo/plugins/master/pluginmaster.json` to your 3rd party repo list.
