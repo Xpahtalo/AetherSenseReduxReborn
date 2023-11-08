@@ -24,7 +24,6 @@ public record Md5Hash: IEquatable<Md5Hash>
     protected Md5Hash(string hashString)
     {
         var hash = MD5.HashData(Encoding.UTF8.GetBytes(hashString));
-        Service.PluginLog.Debug("Computed hash {0} for string [{1}]", BitConverter.ToString(hash), hashString);
         Value = ImmutableArray.CreateRange(hash);
     }
 
@@ -37,9 +36,6 @@ public record Md5Hash: IEquatable<Md5Hash>
         Value = ImmutableArray.CreateRange(enumerable);
     }
 
-
-#region Overrides
-
     public override int GetHashCode() => Value.GetHashCode();
 
     public virtual bool Equals(Md5Hash? other)
@@ -50,6 +46,4 @@ public record Md5Hash: IEquatable<Md5Hash>
     }
 
     public override string ToString() => this == Zeroed ? "Zeroed" : BitConverter.ToString(Value.ToArray());
-
-#endregion
 }
