@@ -29,7 +29,7 @@ public class SimplePattern
         _intensity2    = intensity2;
     }
 
-    public double Update(double elapsedMilliseconds)
+    public SignalOutput Update(double elapsedMilliseconds)
     {
         _elapsedTime += elapsedMilliseconds;
         var weight = double.Clamp(_elapsedTime / _totalDuration, 0, 1);
@@ -46,7 +46,7 @@ public class SimplePattern
             _                          => 0,
         };
         Service.PluginLog.Verbose("time:{0}, weight:{1}, value:{2}", _elapsedTime, weight, value);
-        return value;
+        return new SignalOutput(value);
     }
 
     private static T Lerp<T>(T start, T end, T weight)

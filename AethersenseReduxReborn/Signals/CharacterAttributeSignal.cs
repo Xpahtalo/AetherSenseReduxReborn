@@ -37,7 +37,7 @@ public sealed class CharacterAttributeSignal: SignalBase
         };
 
         if (gameObject is null || !gameObject.IsValid()){
-            Value = 0;
+            Output = SignalOutput.Zero;
             return;
         }
 
@@ -57,7 +57,7 @@ public sealed class CharacterAttributeSignal: SignalBase
 
         if (_correlation == Correlation.Inverse)
             value = 1 - value;
-        Value = value;
+        Output = new SignalOutput(value);
     }
 
     public override SignalSourceConfig CreateConfig() =>

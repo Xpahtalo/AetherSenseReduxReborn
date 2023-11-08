@@ -60,14 +60,14 @@ public class ChatTriggerSignal: SignalBase
 
     public override void Update(double elapsedMilliseconds)
     {
-        var output = 0.0d;
+        var output = SignalOutput.Zero;
         if (_currentPattern is not null)
             output = _currentPattern.Update(elapsedMilliseconds);
         if (_currentPattern is {
                 IsCompleted: true,
             })
             _currentPattern = null;
-        Value = output;
+        Output = output;
     }
 
     private void TriggerPattern() => _currentPattern = SimplePattern.CreatePatternFromConfig(_patternConfig);

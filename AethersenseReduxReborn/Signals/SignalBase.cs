@@ -5,14 +5,9 @@ namespace AethersenseReduxReborn.Signals;
 
 public abstract class SignalBase: ISignalSource
 {
-    private double _value;
-
     public string Name { get; set; }
 
-    public double Value {
-        get => _value;
-        protected set => _value = double.Clamp(value, 0, 1);
-    }
+    public SignalOutput Output { get; protected set; }
 
     protected SignalBase(SignalSourceConfig config) { Name = config.Name; }
 

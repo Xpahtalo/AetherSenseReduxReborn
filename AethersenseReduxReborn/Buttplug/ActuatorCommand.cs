@@ -1,4 +1,6 @@
-﻿namespace AethersenseReduxReborn.Buttplug;
+﻿using AethersenseReduxReborn.Signals;
+
+namespace AethersenseReduxReborn.Buttplug;
 
 public readonly record struct ActuatorCommand
 {
@@ -8,7 +10,9 @@ public readonly record struct ActuatorCommand
         private init => _value = double.Clamp(value, 0, 1);
     }
 
-    public ActuatorCommand(double value) { Value = value; }
+    private ActuatorCommand(double value) { Value = value; }
+
+    public ActuatorCommand(SignalOutput signalOutput) { Value = signalOutput.Value; }
 
     public ActuatorCommand Quantized(uint steps) => new(Quantize(Value, steps));
 

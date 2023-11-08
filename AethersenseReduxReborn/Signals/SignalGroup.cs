@@ -13,7 +13,7 @@ public sealed class SignalGroup: IDisposable
 
     public string              Name          { get; set; }
     public CombineType         CombineType   { get; set; }
-    public double              Signal        { get; set; }
+    public SignalOutput        Signal        { get; set; }
     public List<ISignalSource> SignalSources { get; } = new();
     public ActuatorHash HashOfAssignedActuator {
         get => _hashOfAssignedActuator;
@@ -55,20 +55,20 @@ public sealed class SignalGroup: IDisposable
         foreach (var signalSource in SignalSources){
             signalSource.Update(elapsedMilliseconds);
         }
-        var activeSources = SignalSources.Where(source => source.Value > 0).ToList();
+        var activeSources = SignalSources.Where(source => source.Output > SignalOutput.Zero).ToList();
         if (activeSources.Count == 0){
-            Signal = 0;
+            Signal = SignalOutput.Zero;
             return;
         }
         var intensity = CombineType switch {
-            CombineType.Average => activeSources.Sum(source => source.Value) / activeSources.Count,
-            CombineType.Max     => activeSources.Max(source => source.Value),
-            CombineType.Minimum => activeSources.Min(source => source.Value),
+            CombineType.Average => activeSources.Sum(source => source.Output) / activeSources.Count,
+            CombineType.Max     => activeSources.Max(source => source.Output),
+            CombineType.Minimum => activeSources.Min(source => source.Output),
             _                   => 0,
         };
         if (double.IsNaN(intensity))
             intensity = 0;
-        Signal = double.Clamp(intensity, 0, 1);
+        Signal = new SignalOutput(intensity);
     }
 
     public void AddSignalSource(ISignalSource source)
