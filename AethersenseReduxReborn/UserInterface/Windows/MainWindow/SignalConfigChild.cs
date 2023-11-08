@@ -61,8 +61,8 @@ internal class SignalConfigChild: ImGuiWidget
                                             () =>
                                             {
                                                 SignalSourceConfig config = _signalSourceTypeToAdd switch {
-                                                    SignalSourceType.ChatTrigger     => ChatTriggerSignalConfig.DefaultConfig(),
-                                                    SignalSourceType.PlayerAttribute => CharacterAttributeSignalConfig.DefaultConfig(),
+                                                    SignalSourceType.ChatTrigger     => ChatTriggerSignalConfig.EmptyConfig(),
+                                                    SignalSourceType.PlayerAttribute => CharacterAttributeSignalConfig.EmptyConfig(),
                                                     _                                => throw new ArgumentOutOfRangeException(),
                                                 };
                                                 Service.PluginLog.Debug("SignalConfigChild: {0}: Add new SignalSourceConfig of type {1}", _signalGroupConfiguration.Name, _signalSourceTypeToAdd);

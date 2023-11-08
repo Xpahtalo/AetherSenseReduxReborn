@@ -6,5 +6,5 @@ namespace AethersenseReduxReborn.Signals.Configs;
 [JsonDerivedType(typeof(CharacterAttributeSignalConfig), "CharacterAttribute")]
 public abstract class SignalSourceConfig
 {
-    public string Name { get; set; } = "New Signal Source";
+    public required string Name { get; set; }
 }

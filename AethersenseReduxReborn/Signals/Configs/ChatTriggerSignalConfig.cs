@@ -8,10 +8,14 @@ public class ChatTriggerSignalConfig: SignalSourceConfig
     public required Channel             ChatType      { get; set; }
     public required SimplePatternConfig PatternConfig { get; set; }
 
-    public static ChatTriggerSignalConfig DefaultConfig() =>
+    public static ChatTriggerSignalConfig EmptyConfig() =>
         new() {
-            PatternConfig = SimplePatternConfig.DefaultConstantPattern(),
-            RegexPattern  = "",
-            ChatType      = Channel.Action,
+            Name         = "",
+            RegexPattern = "",
+            ChatType     = Channel.Action,
+            PatternConfig = new SimplePatternConfig {
+                PatternType   = SimplePatternType.Constant,
+                TotalDuration = 1000,
+            },
         };
 }

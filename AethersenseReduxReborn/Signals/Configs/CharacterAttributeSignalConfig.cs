@@ -6,8 +6,9 @@ public class CharacterAttributeSignalConfig: SignalSourceConfig
     public required AttributeToTrack AttributeToTrack { get; set; }
     public required Correlation      Correlation      { get; set; }
 
-    public static CharacterAttributeSignalConfig DefaultConfig() =>
+    public static CharacterAttributeSignalConfig EmptyConfig() =>
         new() {
+            Name             = "",
             CharacterName    = "",
             AttributeToTrack = AttributeToTrack.Hp,
             Correlation      = Correlation.Positive,
