@@ -21,7 +21,7 @@
     <Import Project="Dalamud.Plugin.Bootstrap.targets"/>
     
     <ItemGroup>
-        <None Update="Penumbra.json">
+        <None Update="AethersenseReduxReborn.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
