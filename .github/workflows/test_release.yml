@@ -19,6 +19,7 @@ jobs:
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: '7.x.x'
+          
       - name: Restore dependencies
         run: dotnet restore
 
@@ -78,12 +79,12 @@ jobs:
         run: |
           $verT = '${{ github.ref_name }}'
           $ver = $verT -replace 'testing_'
-          $path = '../repo.json'
+          $path = './repo.json'
           $json = Get-Content -Raw $path | ConvertFrom-Json
           # $json[0].TestingAssemblyVersion = $ver          
-          $json | Add-Member -Force -NotePropertyName "TestingAssemblyVersion" -NotePropertyValue $ver
+          $json[0] | Add-Member -Force -NotePropertyName "TestingAssemblyVersion" -NotePropertyValue $ver
           # $json[0].DownloadLinkTesting = $json.DownloadLinkTesting -replace '[^/]+/AetherSenseReduxReborn.zip',"$verT/AetherSenseReduxReborn.zip"
-          $json | Add-Member -Force -NotePropertyName "DownloadLinkTesting"    -NotePropertyValue $json.DownloadLinkTesting -replace '[^/]+/AetherSenseReduxReborn.zip',"$ver/AetherSenseReduxReborn.zip"
+          $json[0] | Add-Member -Force -NotePropertyName "DownloadLinkTesting"    -NotePropertyValue $json.DownloadLinkTesting -replace '[^/]+/AetherSenseReduxReborn.zip',"$ver/AetherSenseReduxReborn.zip"
           $content = $json | ConvertTo-Json
           set-content -Path $path -Value $content
 
