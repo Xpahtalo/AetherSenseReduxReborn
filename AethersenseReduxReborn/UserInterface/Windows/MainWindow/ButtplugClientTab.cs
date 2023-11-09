@@ -76,6 +76,8 @@ public class ButtplugClientTab: TabBase
             ImGui.Text(device.DisplayName);
             foreach (var deviceActuator in device.Actuators){
                 ImGui.BulletText(deviceActuator.DisplayAttributes);
+                ImGui.Text(deviceActuator.CombineType.ToString());
+
             }
         }
     }
