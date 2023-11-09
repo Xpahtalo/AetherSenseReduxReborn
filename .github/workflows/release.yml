@@ -35,7 +35,7 @@ jobs:
           $path = './AetherSenseReduxReborn/bin/Release/AetherSenseReduxReborn.json'
           $json = Get-Content -Raw $path | ConvertFrom-Json
           Write-host $json
-          $json.AssemblyVersion = $ver
+          $json | Add-Member -Force -NotePropertyName "AssemblyVersion" -NotePropertyValue $ver
           $content = $json | ConvertTo-Json
           set-content -Path $path -Value $content
       - name: Archive
