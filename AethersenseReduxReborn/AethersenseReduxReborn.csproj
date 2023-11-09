@@ -4,14 +4,13 @@
         <Authors>X'pahtalo</Authors>
         <Version>0.0.1.6</Version>
         <PackageProjectUrl>https://github.com/Xpahtalo/AetherSenseReduxReborn</PackageProjectUrl>
-        <Configurations>Debug;Release</Configurations>
     </PropertyGroup>
 
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
-        <Platforms>x64;AnyCPU</Platforms>
+        <TargetFramework>net7.0-windows</TargetFramework>
+        <LangVersion>11</LangVersion>
+        <Configurations>Debug;Release</Configurations>
         <Nullable>enable</Nullable>
-        <LangVersion>latest</LangVersion>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
