@@ -19,7 +19,7 @@
     </PropertyGroup>
 
     <Import Project="Dalamud.Plugin.Bootstrap.targets"/>
-    
+
     <ItemGroup>
         <None Update="AethersenseReduxReborn.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
