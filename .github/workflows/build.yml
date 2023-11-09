@@ -29,11 +29,11 @@ jobs:
         run: |
           dotnet build --no-restore --configuration Release --nologo
       - name: Archive
-        run: Compress-Archive -Path Penumbra/bin/Release/* -DestinationPath Penumbra.zip
+        run: Compress-Archive -Path AetherSenseReduxReborn/bin/Release/* -DestinationPath AetherSenseReduxReborn.zip
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v2.2.1
         with:
           path: |
-            ./Penumbra/bin/Release/*
+            ./AetherSenseReduxReborn/bin/Release/*
 
 
