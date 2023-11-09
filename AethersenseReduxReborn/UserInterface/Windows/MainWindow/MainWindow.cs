@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using AethersenseReduxReborn.Buttplug;
 using AethersenseReduxReborn.Signals;
 using Dalamud.Interface.Windowing;
+using ImGuiNET;
 using XpahtaLib.UserInterface.Tabs;
 
 namespace AethersenseReduxReborn.UserInterface.Windows.MainWindow;
@@ -25,7 +26,11 @@ public sealed class MainWindow: Window, IDisposable
         };
     }
 
-    public override void Draw() { _tabBar.Draw(); }
+    public override void Draw()
+    {
+        ImGui.Text("This UI is considered very temporary and everything is likely to change. Feel free to give feedback on the discord.");
+        _tabBar.Draw();
+    }
 
     public override void OnOpen()
     {

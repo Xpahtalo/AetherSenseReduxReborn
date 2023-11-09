@@ -1,4 +1,5 @@
 ﻿using AethersenseReduxReborn.Buttplug.Configs;
+using AethersenseReduxReborn.Signals.Configs;
 using Buttplug.Core.Messages;
 
 namespace AethersenseReduxReborn.Buttplug;
@@ -12,6 +13,7 @@ public class DeviceActuator
     public string       Description       { get; }
     public uint         Steps             { get; }
     public ActuatorHash Hash              { get; }
+    public CombineType  CombineType       { get; }
     public Device       OwnerDevice       { get; }
     public string       DisplayAttributes => $"{Index} - {ActuatorType} - {Description}";
     public string       DisplayName       => $"{OwnerDevice.Name} - {DisplayAttributes}";
@@ -23,6 +25,7 @@ public class DeviceActuator
         ActuatorType = actuatorConfig.ActuatorType;
         Description  = actuatorConfig.Description;
         Steps        = actuatorConfig.Steps;
+        CombineType  = actuatorConfig.CombineType;
         OwnerDevice  = ownerDevice;
         Hash         = actuatorConfig.Hash;
         Service.PluginLog.Debug("Created known actuator from config: {0} with hash {1}", DisplayName, Hash);
@@ -56,6 +59,7 @@ public class DeviceActuator
             ActuatorType = ActuatorType,
             Description  = Description,
             Steps        = Steps,
+            CombineType  = CombineType,
             Hash         = Hash,
         };
 }
