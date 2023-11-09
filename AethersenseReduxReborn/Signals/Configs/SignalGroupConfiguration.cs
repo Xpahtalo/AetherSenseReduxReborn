@@ -10,10 +10,3 @@ public class SignalGroupConfiguration
     public required List<SignalSourceConfig> SignalSources              { get; set; }
     public          ActuatorHash             HashOfLastAssignedActuator { get; set; } = ActuatorHash.Zeroed;
 }
-
-public enum CombineType
-{
-    Average,
-    Max,
-    Minimum,
-}
