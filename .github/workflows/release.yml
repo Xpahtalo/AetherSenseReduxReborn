@@ -30,9 +30,11 @@ jobs:
           invoke-expression 'dotnet build --no-restore --configuration Release --nologo -p:Version=$ver -p:FileVersion=$ver -p:AssemblyVersion=$ver'
       - name: write version into jsons
         run: |
-          $ver = '${{ github.ref_name }}'
+          Write-Host '${{ github.ref_name }}'
+          $ver = '${{ github.ref_name }}' -replace 'release_'
           $path = './AetherSenseReduxReborn/bin/Release/AetherSenseReduxReborn.json'
           $json = Get-Content -Raw $path | ConvertFrom-Json
+          Write-host $json
           $json.AssemblyVersion = $ver
           $content = $json | ConvertTo-Json
           set-content -Path $path -Value $content
