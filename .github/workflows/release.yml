@@ -73,19 +73,16 @@ jobs:
           $ver = '${{ github.ref_name }}'
           $path = '../repo.json'
           $json = Get-Content -Raw $path | ConvertFrom-Json
-          
-#         $json | Add-Member -Force -NotePropertyName "AssemblyVersion" -NotePropertyValue $ver
-               
+          # $json | Add-Member -Force -NotePropertyName "AssemblyVersion" -NotePropertyValue $ver
           $json | Add-Member -Force -NotePropertyName "AssemblyVersion"        -NotePropertyValue $ver
           $json | Add-Member -Force -NotePropertyName "TestingAssemblyVersion" -NotePropertyValue $ver
           $json | Add-Member -Force -NotePropertyName "DownloadLinkInstall"    -NotePropertyValue $json.DownloadLinkInstall -replace '[^/]+/AetherSenseReduxReborn.zip',"$ver/AetherSenseReduxReborn.zip"
           $json | Add-Member -Force -NotePropertyName "DownloadLinkTesting"    -NotePropertyValue $json.DownloadLinkTesting -replace '[^/]+/AetherSenseReduxReborn.zip',"$ver/AetherSenseReduxReborn.zip"
-          
-#         $json[0].AssemblyVersion = $ver
-#         $json[0].TestingAssemblyVersion = $ver
-#         $json[0].DownloadLinkInstall = $json.DownloadLinkInstall -replace '[^/]+/AetherSenseReduxReborn.zip',"$ver/AetherSenseReduxReborn.zip"
-#         $json[0].DownloadLinkTesting = $json.DownloadLinkTesting -replace '[^/]+/AetherSenseReduxReborn.zip',"$ver/AetherSenseReduxReborn.zip"
-#         $json[0].DownloadLinkUpdate = $json.DownloadLinkUpdate -replace '[^/]+/AetherSenseReduxReborn.zip',"$ver/AetherSenseReduxReborn.zip"
+          # $json[0].AssemblyVersion = $ver
+          # $json[0].TestingAssemblyVersion = $ver
+          # $json[0].DownloadLinkInstall = $json.DownloadLinkInstall -replace '[^/]+/AetherSenseReduxReborn.zip',"$ver/AetherSenseReduxReborn.zip"
+          # $json[0].DownloadLinkTesting = $json.DownloadLinkTesting -replace '[^/]+/AetherSenseReduxReborn.zip',"$ver/AetherSenseReduxReborn.zip"
+          # $json[0].DownloadLinkUpdate = $json.DownloadLinkUpdate -replace '[^/]+/AetherSenseReduxReborn.zip',"$ver/AetherSenseReduxReborn.zip"
           $content = $json | ConvertTo-Json
           set-content -Path $path -Value $content
 
