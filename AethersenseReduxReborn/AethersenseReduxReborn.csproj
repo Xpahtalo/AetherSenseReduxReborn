@@ -19,6 +19,13 @@
     </PropertyGroup>
 
     <Import Project="Dalamud.Plugin.Bootstrap.targets"/>
+    
+    <ItemGroup>
+        <None Update="Penumbra.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
 
     <ItemGroup>
         <PackageReference Include="Buttplug" Version="3.0.1" GeneratePathProperty="true"/>
