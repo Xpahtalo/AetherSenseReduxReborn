@@ -2,10 +2,9 @@ name: .NET Build
 
 on:
   push:
-    branches: 
-      - '*'
     tags-ignore: 
-      - '*'
+      - 'testing_*'
+      - 'release_*'
   pull_request:
 
 jobs:
