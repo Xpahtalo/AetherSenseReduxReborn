@@ -10,6 +10,7 @@ namespace AethersenseReduxReborn;
 
 #pragma warning disable CS8618
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Local")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 public class Service
 {
     [PluginService] public static DalamudPluginInterface PluginInterface { get; private set; }

@@ -9,7 +9,7 @@ using System.Text.Json.Serialization;
 
 namespace AethersenseReduxReborn.Misc;
 
-public record Md5Hash: IEquatable<Md5Hash>
+public record Md5Hash
 {
     protected static Md5Hash Zeroed { get; }
 
@@ -31,8 +31,9 @@ public record Md5Hash: IEquatable<Md5Hash>
     protected Md5Hash(IEnumerable<byte> hashBytes)
     {
         var enumerable = hashBytes as byte[] ?? hashBytes.ToArray();
-        if (enumerable.Length != 16)
+        if (enumerable.Length != 16){
             throw new ArgumentException("Hash must be 16 bytes long", nameof(hashBytes));
+        }
         Value = ImmutableArray.CreateRange(enumerable);
     }
 
@@ -40,8 +41,9 @@ public record Md5Hash: IEquatable<Md5Hash>
 
     public virtual bool Equals(Md5Hash? other)
     {
-        if ((object)other! == this)
+        if ((object)other! == this){
             return true;
+        }
         return other != null && Value.SequenceEqual(other.Value);
     }
 

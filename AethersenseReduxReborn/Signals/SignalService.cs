@@ -10,25 +10,28 @@ namespace AethersenseReduxReborn.Signals;
 
 public sealed class SignalService: IDisposable
 {
-    private readonly ButtplugWrapper           _buttplugWrapper;
+    private SimplePattern?        TestPattern     { get; set; }
+    private ActuatorHash          TestHash        { get; set; } = ActuatorHash.Zeroed;
+    private SignalGroupCollection GroupCollection { get; set; }
+
     private readonly SignalPluginConfiguration _signalPluginConfiguration;
-    private          SimplePattern?            _testPattern;
-    private          ActuatorHash              _testHash = ActuatorHash.Zeroed;
-    private          SignalGroupCollection     _signalGroupCollection;
 
-    public SignalService(ButtplugWrapper buttplugWrapper, SignalPluginConfiguration signalPluginConfiguration)
+    public ButtplugWrapper ButtplugWrapper { get; }
+
+    public SignalService()
     {
-        _buttplugWrapper           =  buttplugWrapper;
-        _signalPluginConfiguration =  signalPluginConfiguration;
-        Service.Framework.Update   += FrameworkUpdate;
+        _signalPluginConfiguration = Service.ConfigurationService.SignalPluginConfiguration;
+        ButtplugWrapper            = new ButtplugWrapper(Plugin.Name, Service.ConfigurationService.PluginConfiguration);
 
-        _signalGroupCollection = new SignalGroupCollection(signalPluginConfiguration.SignalConfigurations, buttplugWrapper);
+        Service.Framework.Update += FrameworkUpdate;
+
+        GroupCollection = new SignalGroupCollection(_signalPluginConfiguration.SignalConfigurations, ButtplugWrapper);
     }
 
     public void ApplyConfiguration(IEnumerable<SignalGroupConfiguration> groupConfigurations)
     {
-        _signalGroupCollection.Dispose();
-        _signalGroupCollection = new SignalGroupCollection(groupConfigurations, _buttplugWrapper);
+        GroupCollection.Dispose();
+        GroupCollection = new SignalGroupCollection(groupConfigurations, ButtplugWrapper);
     }
 
     public void SaveConfiguration(IEnumerable<SignalGroupConfiguration> groupConfigurations)
@@ -41,29 +44,31 @@ public sealed class SignalService: IDisposable
 
     public void Dispose()
     {
-        _signalGroupCollection.Dispose();
+        ButtplugWrapper.Dispose();
+        GroupCollection.Dispose();
         Service.Framework.Update -= FrameworkUpdate;
     }
 
     private void FrameworkUpdate(IFramework framework)
     {
-        if (_testPattern != null && _testHash != ActuatorHash.Zeroed){
-            var value = _testPattern.Update(framework.UpdateDelta.TotalMilliseconds);
-            _buttplugWrapper.SendCommandToActuator(_testHash, new ActuatorCommand(value));
-            if (!_testPattern.IsCompleted)
-                return;
-            _testPattern = null;
-            _testHash    = ActuatorHash.Zeroed;
+        if (TestPattern != null && TestHash != ActuatorHash.Zeroed){
+            var value = TestPattern.Update(framework.UpdateDelta.TotalMilliseconds);
+            ButtplugWrapper.SendCommandToActuator(TestHash, new ActuatorCommand(value));
+            if (TestPattern.IsCompleted){
+                TestPattern = null;
+                TestHash    = ActuatorHash.Zeroed;
+            }
         } else{
-            _signalGroupCollection.UpdateSignalGroups(framework.UpdateDelta.TotalMilliseconds);
+            GroupCollection.UpdateSignalGroups(framework.UpdateDelta.TotalMilliseconds);
         }
     }
 
     public void SetTestPattern(SimplePatternConfig pattern, ActuatorHash hash)
     {
-        _testPattern = SimplePattern.CreatePatternFromConfig(pattern);
-        _testHash    = hash;
+        TestPattern = new SimplePattern(pattern);
+//        _testPattern = SimplePattern.CreatePatternFromConfig(pattern);
+        TestHash = hash;
     }
 
-    public IEnumerable<SignalGroupConfiguration> GetSignalGroupConfigurations() => _signalGroupCollection.CreateConfig();
+    public IEnumerable<SignalGroupConfiguration> GetSignalGroupConfigurations() => GroupCollection.CreateConfig();
 }

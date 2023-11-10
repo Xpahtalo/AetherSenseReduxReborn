@@ -83,10 +83,11 @@ public class RegexHelper: Window
 
     public override void Draw()
     {
-        if (Editing)
+        if (Editing){
             DrawEditing();
-        else
+        } else{
             DrawTesting();
+        }
         ImGui.Separator();
         DrawRegexSection();
         _confirmButton.Draw();
@@ -127,8 +128,9 @@ public class RegexHelper: Window
         if (!RegexIsValid){
             ImGui.SameLine();
             ImGui.TextColored(ImGuiColors.DPSRed, "(!)");
-            if (ImGui.IsItemHovered())
+            if (ImGui.IsItemHovered()){
                 ImGui.SetTooltip("Invalid Regex");
+            }
         }
     }
 
@@ -138,7 +140,7 @@ public class RegexHelper: Window
         Service.WindowManager.RemoveWindow(this);
     }
 
-    private IEnumerable<string> SplitAtNewLines(string text)
+    private static IEnumerable<string> SplitAtNewLines(string text)
     {
         using var reader = new StringReader(text);
         var       line   = reader.ReadLine();

@@ -65,11 +65,13 @@ public sealed class ButtplugWrapper: IDisposable
     {
         try{
             var actuator = GetActuatorByHash(hash);
-            if (actuator is null)
+            if (actuator is null){
                 throw new KeyNotFoundException();
+            }
 
-            if (!actuator.IsConnected)
+            if (!actuator.IsConnected){
                 throw new InvalidOperationException("Actuator is not connected.");
+            }
 
             actuator.SendCommand(command);
         } catch (KeyNotFoundException e){
@@ -94,7 +96,7 @@ public sealed class ButtplugWrapper: IDisposable
     }
 
     /// <inheritdoc cref="DeviceCollection.GetActuatorByHash" />
-    public DeviceActuator? GetActuatorByHash(ActuatorHash hash) => _deviceCollection.GetActuatorByHash(hash);
+    private DeviceActuator? GetActuatorByHash(ActuatorHash hash) => _deviceCollection.GetActuatorByHash(hash);
 
     public void SaveDevicesToConfiguration()
     {

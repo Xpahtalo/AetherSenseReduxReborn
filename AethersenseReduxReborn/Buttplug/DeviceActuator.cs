@@ -46,8 +46,9 @@ public class DeviceActuator
     {
         var quantized = value.Quantized(Steps);
 
-        if (quantized == _previousValue)
+        if (quantized == _previousValue){
             return;
+        }
         Service.PluginLog.Verbose("New actuator command [{0}] is significantly different from previous command [{1}]. Sending.", quantized, _previousValue);
         _previousValue = quantized;
         OwnerDevice.SendCommandToActuator(this, quantized);

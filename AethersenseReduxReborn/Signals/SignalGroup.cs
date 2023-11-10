@@ -8,19 +8,20 @@ namespace AethersenseReduxReborn.Signals;
 
 public sealed class SignalGroup: IDisposable
 {
-    private bool         _enabled;
     private ActuatorHash _hashOfAssignedActuator = null!;
+    private bool         _enabled;
 
-    public string              Name          { get; set; }
-    public CombineType         CombineType   { get; set; }
-    public SignalOutput        Signal        { get; set; }
+    public string              Name          { get; }
+    public CombineType         CombineType   { get; }
+    public SignalOutput        Signal        { get; private set; }
     public List<ISignalSource> SignalSources { get; } = new();
     public ActuatorHash HashOfAssignedActuator {
         get => _hashOfAssignedActuator;
-        set {
+        private set {
             _hashOfAssignedActuator = value;
-            if (value != ActuatorHash.Zeroed)
+            if (value != ActuatorHash.Zeroed){
                 HashOfLastAssignedActuator = value;
+            }
         }
     }
     public ActuatorHash HashOfLastAssignedActuator { get; private set; }
@@ -40,11 +41,15 @@ public sealed class SignalGroup: IDisposable
         _enabled                   = false;
 
         foreach (var sourceConfig in groupConfiguration.SignalSources){
-            ISignalSource source = sourceConfig switch {
+            ISignalSource? source = sourceConfig switch {
                 ChatTriggerSignalConfig chatTriggerSignalConfig            => new ChatTriggerSignal(chatTriggerSignalConfig),
                 CharacterAttributeSignalConfig playerAttributeSignalConfig => new CharacterAttributeSignal(playerAttributeSignalConfig),
-                _                                                          => throw new ArgumentOutOfRangeException(nameof(sourceConfig)),
+                _                                                          => null,
             };
+            if (source is null){
+                Service.PluginLog.Error("Failed to create SignalSource from config: {0}", sourceConfig);
+                continue;
+            }
             Service.PluginLog.Debug("Adding new SignalSource {0} to SignalGroup {1}", sourceConfig.Name, Name);
             AddSignalSource(source);
         }
@@ -66,8 +71,9 @@ public sealed class SignalGroup: IDisposable
             CombineType.Minimum => activeSources.Min(source => source.Output),
             _                   => 0,
         };
-        if (double.IsNaN(intensity))
+        if (double.IsNaN(intensity)){
             intensity = 0;
+        }
         Signal = new SignalOutput(intensity);
     }
 
@@ -111,17 +117,10 @@ public sealed class SignalGroup: IDisposable
         Enabled                = false;
     }
 
-    private void Dispose(bool disposing)
-    {
-        if (disposing)
-            foreach (var source in SignalSources){
-                source.Dispose();
-            }
-    }
-
     public void Dispose()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
+        foreach (var source in SignalSources){
+            source.Dispose();
+        }
     }
 }

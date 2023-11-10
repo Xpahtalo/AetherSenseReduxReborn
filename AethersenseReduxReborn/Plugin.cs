@@ -1,5 +1,4 @@
-﻿using AethersenseReduxReborn.Buttplug;
-using AethersenseReduxReborn.Configurations;
+﻿using AethersenseReduxReborn.Configurations;
 using AethersenseReduxReborn.Signals;
 using AethersenseReduxReborn.UserInterface;
 using AethersenseReduxReborn.UserInterface.Windows.MainWindow;
@@ -11,11 +10,9 @@ namespace AethersenseReduxReborn;
 // ReSharper disable once ClassNeverInstantiated.Global
 public sealed class Plugin: IDalamudPlugin
 {
-    private readonly ButtplugWrapper _buttplugWrapper;
-    private readonly SignalService   _signalService;
-    public           string          Name => "Aethersense Redux Reborn";
-    private const    string          CommandName = "/arr";
-
+    private       SignalService SignalService { get; }
+    public static string        Name          => "Aethersense Redux Reborn";
+    private const string        CommandName = "/arr";
 
     public Plugin(DalamudPluginInterface pluginInterface)
     {
@@ -27,11 +24,9 @@ public sealed class Plugin: IDalamudPlugin
 
         Service.ConfigurationService = new ConfigurationService();
         Service.WindowManager        = new WindowManager();
+        SignalService                = new SignalService();
 
-        _buttplugWrapper = new ButtplugWrapper(Name, Service.ConfigurationService.PluginConfiguration);
-        _signalService   = new SignalService(_buttplugWrapper, Service.ConfigurationService.SignalPluginConfiguration);
-
-        Service.WindowManager.AddWindow(new MainWindow(_buttplugWrapper, _signalService));
+        Service.WindowManager.AddWindow(new MainWindow(SignalService));
 
         Service.PluginInterface.UiBuilder.Draw         += DrawUi;
         Service.PluginInterface.UiBuilder.OpenConfigUi += DrawConfigUi;
@@ -40,8 +35,8 @@ public sealed class Plugin: IDalamudPlugin
 
     public void Dispose()
     {
+        SignalService.Dispose();
         Service.CommandManager.RemoveHandler(CommandName);
-        _buttplugWrapper.Dispose();
     }
 
     private static void OnShowUI(string command, string args) => Service.WindowManager.ToggleWindow(MainWindow.Name);

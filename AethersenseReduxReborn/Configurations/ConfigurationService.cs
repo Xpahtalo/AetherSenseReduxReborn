@@ -20,7 +20,7 @@ public class ConfigurationService
 
     public void OpenConfigDirectory() { Process.Start("explorer.exe", _configDirectory); }
 
-    public void LoadServerConfiguration()
+    private void LoadServerConfiguration()
     {
         Service.PluginLog.Information("Loading server configuration.");
         var path = Path.Combine(_configDirectory, "server.json");
@@ -37,8 +37,7 @@ public class ConfigurationService
         static ButtplugPluginConfiguration GetDefaultServerConfiguration() { return new ButtplugPluginConfiguration(); }
     }
 
-
-    public void LoadSignalConfiguration()
+    private void LoadSignalConfiguration()
     {
         Service.PluginLog.Information("Loading signal configuration.");
         var path = Path.Combine(_configDirectory, "signal.json");
@@ -54,7 +53,6 @@ public class ConfigurationService
 
         static SignalPluginConfiguration GetDefaultConfiguration() { return SignalPluginConfiguration.GetDefaultConfiguration(); }
     }
-
 
     public void SaveServerConfiguration(ButtplugPluginConfiguration pluginConfiguration)
     {

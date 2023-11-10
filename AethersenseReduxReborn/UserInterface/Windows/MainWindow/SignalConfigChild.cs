@@ -13,64 +13,73 @@ namespace AethersenseReduxReborn.UserInterface.Windows.MainWindow;
 
 internal class SignalConfigChild: ImGuiWidget
 {
-    private readonly TextInput                              _nameInput;
-    private readonly SingleSelectionCombo<ActuatorHash>     _actuatorCombo;
-    private readonly SingleSelectionCombo<CombineType>      _combineTypeCombo;
-    private readonly SingleSelectionCombo<SignalSourceType> _signalSourceTypeCombo;
-    private          SignalSourceType                       _signalSourceTypeToAdd;
-    private readonly Button                                 _addSignalSourceButton;
-    private readonly List<SignalSourceConfigEntry>          _signalSourceConfigEntries = new();
+    private TextInput                              NameInput                 { get; }
+    private SingleSelectionCombo<ActuatorHash>     ActuatorCombo             { get; }
+    private SingleSelectionCombo<CombineType>      CombineTypeCombo          { get; }
+    private SingleSelectionCombo<SignalSourceType> SignalSourceTypeCombo     { get; }
+    private Button                                 AddSignalSourceButton     { get; }
+    private List<SignalSourceConfigEntry>          SignalSourceConfigEntries { get; } = new();
 
-    private readonly SignalGroupConfiguration _signalGroupConfiguration;
-    private readonly SignalService            _signalService;
-    private readonly ButtplugWrapper          _buttplugWrapper;
+    private SignalGroupConfiguration GroupConfiguration    { get; }
+    private SignalService            SignalService         { get; }
+    private ButtplugWrapper          ButtplugWrapper       { get; }
+    public  SignalSourceType         SignalSourceTypeToAdd { get; private set; }
 
-    public SignalConfigChild(SignalGroupConfiguration signalGroupConfiguration, SignalService signalService, ButtplugWrapper buttplugWrapper)
+    public SignalConfigChild(SignalGroupConfiguration signalGroupConfiguration, SignalService signalService, ButtplugWrapper buttplugButtplugWrapper)
     {
-        _signalGroupConfiguration = signalGroupConfiguration;
-        _signalService            = signalService;
-        _buttplugWrapper          = buttplugWrapper;
+        GroupConfiguration = signalGroupConfiguration;
+        SignalService      = signalService;
+        ButtplugWrapper    = buttplugButtplugWrapper;
 
-        _nameInput = new TextInput("Name",
-                                   100,
-                                   s => _signalGroupConfiguration.Name = s);
-        _actuatorCombo = new SingleSelectionCombo<ActuatorHash>("Assigned Actuator",
-                                                                hash => _buttplugWrapper.GetActuatorDisplayName(hash),
-                                                                (hash1, hash2) => hash1 == hash2,
-                                                                selection =>
-                                                                {
-                                                                    if (selection is null)
-                                                                        return;
-                                                                    if (selection == ActuatorHash.Zeroed)
-                                                                        return;
-                                                                    Service.PluginLog.Debug("Signal Group {0} selected new actuator {1}", _signalGroupConfiguration.Name, selection);
-                                                                    _signalGroupConfiguration.HashOfLastAssignedActuator = selection;
-                                                                });
-        _combineTypeCombo = new SingleSelectionCombo<CombineType>("CombineType",
-                                                                  combineType => combineType.ToString(),
-                                                                  (combineType1, combineType2) => combineType1 == combineType2,
-                                                                  selection => _signalGroupConfiguration.CombineType = selection);
+        NameInput = new TextInput("Name",
+                                  100,
+                                  s => GroupConfiguration.Name = s);
+        ActuatorCombo = new SingleSelectionCombo<ActuatorHash>("Assigned Actuator",
+                                                               hash => ButtplugWrapper.GetActuatorDisplayName(hash),
+                                                               (hash1, hash2) => hash1 == hash2,
+                                                               selection =>
+                                                               {
+                                                                   if (selection is null){
+                                                                       return;
+                                                                   }
+                                                                   if (selection == ActuatorHash.Zeroed){
+                                                                       return;
+                                                                   }
+                                                                   Service.PluginLog.Debug("Signal Group {0} selected new actuator {1}", GroupConfiguration.Name, selection);
+                                                                   GroupConfiguration.HashOfLastAssignedActuator = selection;
+                                                               });
+        CombineTypeCombo = new SingleSelectionCombo<CombineType>("CombineType",
+                                                                 combineType => combineType.ToString(),
+                                                                 (combineType1, combineType2) => combineType1 == combineType2,
+                                                                 selection => GroupConfiguration.CombineType = selection);
 
 
-        _signalSourceTypeCombo = new SingleSelectionCombo<SignalSourceType>("Type to add",
-                                                                            type => type.DisplayString(),
-                                                                            (type1, type2) => type1 == type2,
-                                                                            selection => _signalSourceTypeToAdd = selection);
+        SignalSourceTypeCombo = new SingleSelectionCombo<SignalSourceType>("Type to add",
+                                                                           type => type.DisplayString(),
+                                                                           (type1, type2) => type1 == type2,
+                                                                           selection => SignalSourceTypeToAdd = selection);
         ImGui.SameLine();
-        _addSignalSourceButton = new Button("Add",
-                                            () =>
-                                            {
-                                                SignalSourceConfig config = _signalSourceTypeToAdd switch {
-                                                    SignalSourceType.ChatTrigger     => ChatTriggerSignalConfig.EmptyConfig(),
-                                                    SignalSourceType.PlayerAttribute => CharacterAttributeSignalConfig.EmptyConfig(),
-                                                    _                                => throw new ArgumentOutOfRangeException(),
-                                                };
-                                                Service.PluginLog.Debug("SignalConfigChild: {0}: Add new SignalSourceConfig of type {1}", _signalGroupConfiguration.Name, _signalSourceTypeToAdd);
-                                                _signalGroupConfiguration.SignalSources.Add(config);
-                                                AddNewConfigEntry(config);
-                                            });
+        AddSignalSourceButton = new Button("Add",
+                                           () =>
+                                           {
+                                               SignalSourceConfig config = SignalSourceTypeToAdd switch {
+                                                   SignalSourceType.ChatTrigger     => ChatTriggerSignalConfig.EmptyConfig(),
+                                                   SignalSourceType.PlayerAttribute => CharacterAttributeSignalConfig.EmptyConfig(),
+                                                   _ => throw new ArgumentOutOfRangeException(nameof(SignalSourceTypeToAdd), SignalSourceTypeToAdd, "Unknown SignalSourceType while trying to add new SignalSourceConfig.") {
+                                                       Source = "SignalConfigChild._addSignalSourceButton, ButtonPressed Lambda",
+                                                       Data = {
+                                                           { "SignalConfigChildId", Id },
+                                                           { "SignalGroupConfigurationName", GroupConfiguration.Name },
+                                                           { "SignalSourceTypeToAdd", SignalSourceTypeToAdd },
+                                                       },
+                                                   },
+                                               };
+                                               Service.PluginLog.Debug("SignalConfigChild: {0}: Add new SignalSourceConfig of type {1}", GroupConfiguration.Name, SignalSourceTypeToAdd);
+                                               GroupConfiguration.SignalSources.Add(config);
+                                               AddNewConfigEntry(config);
+                                           });
 
-        foreach (var signalSourceConfig in _signalGroupConfiguration.SignalSources){
+        foreach (var signalSourceConfig in GroupConfiguration.SignalSources){
             AddNewConfigEntry(signalSourceConfig);
         }
     }
@@ -79,23 +88,23 @@ internal class SignalConfigChild: ImGuiWidget
     {
         using var id    = ImRaii.PushId(Id.ToString());
         using var child = ImRaii.Child("SignalConfigChild");
-        _nameInput.Draw(_signalGroupConfiguration.Name);
-        _actuatorCombo.Draw(_signalGroupConfiguration.HashOfLastAssignedActuator, _buttplugWrapper.Actuators.Select(actuator => actuator.Hash));
-        _combineTypeCombo.Draw(_signalGroupConfiguration.CombineType, Enum.GetValues<CombineType>());
+        NameInput.Draw(GroupConfiguration.Name);
+        ActuatorCombo.Draw(GroupConfiguration.HashOfLastAssignedActuator, ButtplugWrapper.Actuators.Select(actuator => actuator.Hash));
+        CombineTypeCombo.Draw(GroupConfiguration.CombineType, Enum.GetValues<CombineType>());
 
         ImGui.Separator();
         ImGui.Text("Signal Sources");
-        _signalSourceTypeCombo.Draw(_signalSourceTypeToAdd, Enum.GetValues<SignalSourceType>());
+        SignalSourceTypeCombo.Draw(SignalSourceTypeToAdd, Enum.GetValues<SignalSourceType>());
         ImGui.SameLine();
-        _addSignalSourceButton.Draw();
+        AddSignalSourceButton.Draw();
         ImGui.Separator();
         ImGui.Separator();
 
-        foreach (var entry in _signalSourceConfigEntries){
+        foreach (var entry in SignalSourceConfigEntries){
             entry.Draw();
             if (ImGui.Button($"Remove###{entry.Id}")){
-                _signalGroupConfiguration.SignalSources.Remove(entry.SignalSourceConfig);
-                _signalSourceConfigEntries.Remove(entry);
+                GroupConfiguration.SignalSources.Remove(entry.SignalSourceConfig);
+                SignalSourceConfigEntries.Remove(entry);
             }
             ImGui.Separator();
         }
@@ -104,11 +113,18 @@ internal class SignalConfigChild: ImGuiWidget
     private void AddNewConfigEntry(SignalSourceConfig config)
     {
         SignalSourceConfigEntry entry = config switch {
-            ChatTriggerSignalConfig chatTriggerSignalConfig            => new ChatTriggerConfigEntry(chatTriggerSignalConfig, _signalService, _signalGroupConfiguration),
-            CharacterAttributeSignalConfig playerAttributeSignalConfig => new PlayerAttributeConfigEntry(playerAttributeSignalConfig, _signalService),
-            _                                                          => throw new ArgumentOutOfRangeException(nameof(config), config, null),
+            ChatTriggerSignalConfig chatTriggerSignalConfig            => new ChatTriggerConfigEntry(chatTriggerSignalConfig, SignalService, GroupConfiguration),
+            CharacterAttributeSignalConfig playerAttributeSignalConfig => new PlayerAttributeConfigEntry(playerAttributeSignalConfig, SignalService),
+            _ => throw new ArgumentOutOfRangeException(nameof(config), config, "Given SignalSourceConfig is of an unknown type.") {
+                Source = "SignalConfigChild.AddNewConfigEntry",
+                Data = {
+                    { "SignalConfigChildId", Id },
+                    { "SignalGroupConfigurationName", GroupConfiguration.Name },
+                    { "SignalSourceConfigType", config.GetType() },
+                },
+            },
         };
-        _signalSourceConfigEntries.Add(entry);
-        Service.PluginLog.Debug("SignalConfigChild: {0}: Added source config to entry list: {1}", _signalGroupConfiguration.Name, entry.SignalSourceConfig.Name);
+        SignalSourceConfigEntries.Add(entry);
+        Service.PluginLog.Debug("SignalConfigChild: {0}: Added source config to entry list: {1}", GroupConfiguration.Name, entry.SignalSourceConfig.Name);
     }
 }

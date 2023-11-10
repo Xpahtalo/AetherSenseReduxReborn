@@ -62,7 +62,7 @@ public static class SignalDefaults
         Correlation      = Correlation.Inverse,
         Name             = "Target Health",
     };
-    
+
     public static SignalGroupConfiguration Caster => new() {
         Name        = "Caster",
         CombineType = CombineType.Max,

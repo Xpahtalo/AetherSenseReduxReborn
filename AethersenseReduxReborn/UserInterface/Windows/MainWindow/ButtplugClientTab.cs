@@ -1,5 +1,4 @@
 ﻿using AethersenseReduxReborn.Buttplug;
-using AethersenseReduxReborn.Configurations;
 using Dalamud.Interface.Colors;
 using Dalamud.Interface.Utility.Raii;
 using ImGuiNET;
@@ -9,17 +8,11 @@ namespace AethersenseReduxReborn.UserInterface.Windows.MainWindow;
 
 public class ButtplugClientTab: TabBase
 {
-    private readonly ButtplugPluginConfiguration _pluginConfiguration;
+    private ButtplugWrapper ButtplugWrapper { get; }
 
-    private readonly ButtplugWrapper _buttplugWrapper;
+    public override string TabName => "Buttplug";
 
-    public override string Name => "Buttplug";
-
-    public ButtplugClientTab(ButtplugWrapper buttplugWrapper)
-    {
-        _pluginConfiguration = Service.ConfigurationService.PluginConfiguration;
-        _buttplugWrapper     = buttplugWrapper;
-    }
+    public ButtplugClientTab(ButtplugWrapper buttplugButtplugWrapper) { ButtplugWrapper = buttplugButtplugWrapper; }
 
     protected override void DrawTab()
     {
@@ -31,7 +24,7 @@ public class ButtplugClientTab: TabBase
 
     private void ConnectionStatus()
     {
-        switch (_buttplugWrapper.Connected){
+        switch (ButtplugWrapper.Connected){
             case true:
                 ImGui.Text("Connected to buttplug server.");
                 break;
@@ -40,44 +33,50 @@ public class ButtplugClientTab: TabBase
                 break;
         }
 
-        if (!_buttplugWrapper.Connected){
-            var uri = _pluginConfiguration.Address;
-            if (ImGui.InputText("Server Address", ref uri, 100))
-                _pluginConfiguration.Address = uri;
+        var pluginConfiguration = Service.ConfigurationService.PluginConfiguration;
+        if (!ButtplugWrapper.Connected){
+            var uri = pluginConfiguration.Address;
+            if (ImGui.InputText("Server Address", ref uri, 100)){
+                pluginConfiguration.Address = uri;
+            }
         }
         ImGui.SameLine();
         if (ImGui.Button("Save")){
-            _buttplugWrapper.SaveDevicesToConfiguration();
-            Service.ConfigurationService.SaveServerConfiguration(_pluginConfiguration);
+            ButtplugWrapper.SaveDevicesToConfiguration();
+            Service.ConfigurationService.SaveServerConfiguration(pluginConfiguration);
         }
 
 #if DEBUG
-        if (ImGui.Button("Open Config Directory"))
+        if (ImGui.Button("Open Config Directory")){
             Service.ConfigurationService.OpenConfigDirectory();
+        }
 #endif
     }
 
     private void ConnectionButtons()
     {
-        if (_buttplugWrapper.Connected){
-            if (ImGui.Button("Disconnect")) _buttplugWrapper.Disconnect();
+        if (ButtplugWrapper.Connected){
+            if (ImGui.Button("Disconnect")){
+                ButtplugWrapper.Disconnect();
+            }
         } else{
-            if (ImGui.Button("Connect")) _buttplugWrapper.Connect();
+            if (ImGui.Button("Connect")){
+                ButtplugWrapper.Connect();
+            }
         }
     }
 
     private void ListDevicesAndActuators()
     {
         ImGui.Text("Saved and Connected devices:");
-        
-        foreach (var device in _buttplugWrapper.Devices){
+
+        foreach (var device in ButtplugWrapper.Devices){
             var       color = device.IsConnected ? ImGuiColors.DalamudWhite : ImGuiColors.DalamudGrey;
             using var _     = new ImRaii.Color().Push(ImGuiCol.Text, color);
             ImGui.Text(device.DisplayName);
             foreach (var deviceActuator in device.Actuators){
                 ImGui.BulletText(deviceActuator.DisplayAttributes);
                 ImGui.Text(deviceActuator.CombineType.ToString());
-
             }
         }
     }

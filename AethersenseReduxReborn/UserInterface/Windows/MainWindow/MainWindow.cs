@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using AethersenseReduxReborn.Buttplug;
 using AethersenseReduxReborn.Signals;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
@@ -10,18 +9,18 @@ namespace AethersenseReduxReborn.UserInterface.Windows.MainWindow;
 
 public sealed class MainWindow: Window, IDisposable
 {
-    private readonly TabBar _tabBar;
+    private TabBar TabBar { get; }
 
     public static string Name => "Aethersense Redux Reborn - This is in super alpha don't expect it to work.";
 
-    public MainWindow(ButtplugWrapper buttplugWrapper, SignalService signalService)
+    public MainWindow(SignalService signalService)
         : base(Name)
     {
-        _tabBar = new TabBar {
+        TabBar = new TabBar {
             Name = "Main Window Tab Bar",
             Tabs = new List<TabBase> {
-                new ButtplugClientTab(buttplugWrapper),
-                new SignalGroupTab(buttplugWrapper, signalService),
+                new ButtplugClientTab(signalService.ButtplugWrapper),
+                new SignalGroupTab(signalService),
             },
         };
     }
@@ -29,20 +28,20 @@ public sealed class MainWindow: Window, IDisposable
     public override void Draw()
     {
         ImGui.Text("This UI is considered very temporary and everything is likely to change. Feel free to give feedback on the discord.");
-        _tabBar.Draw();
+        TabBar.Draw();
     }
 
     public override void OnOpen()
     {
         base.OnOpen();
-        _tabBar.OnOpen();
+        TabBar.OnOpen();
     }
 
     public override void OnClose()
     {
         base.OnClose();
-        _tabBar.OnClose();
+        TabBar.OnClose();
     }
 
-    public void Dispose() { _tabBar.Dispose(); }
+    public void Dispose() { TabBar.Dispose(); }
 }

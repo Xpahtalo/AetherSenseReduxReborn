@@ -72,6 +72,20 @@ public class DeviceCollection
         }
     }
 
+    private void InvokeActuatorConnectedOnDevice(Device device)
+    {
+        foreach (var actuator in device.Actuators){
+            InvokeActuatorConnected(actuator);
+        }
+    }
+
+    private void InvokeActuatorConnected(DeviceActuator actuator)
+    {
+        ActuatorConnected?.Invoke(new ActuatorConnectedEventArgs {
+            HashOfActuator = actuator.Hash,
+        });
+    }
+
     public void DisconnectButtplugDevice(ButtplugClientDevice clientDevice)
     {
         try{
@@ -91,24 +105,10 @@ public class DeviceCollection
         }
     }
 
-    public void DisconnectDevice(Device device)
+    private void DisconnectDevice(Device device)
     {
         device.RemoveInternalDevice();
         InvokeActuatorDisconnectedOnDevice(device);
-    }
-
-    private void InvokeActuatorConnectedOnDevice(Device device)
-    {
-        foreach (var actuator in device.Actuators){
-            InvokeActuatorConnected(actuator);
-        }
-    }
-
-    private void InvokeActuatorConnected(DeviceActuator actuator)
-    {
-        ActuatorConnected?.Invoke(new ActuatorConnectedEventArgs {
-            HashOfActuator = actuator.Hash,
-        });
     }
 
     private void InvokeActuatorDisconnectedOnDevice(Device device)
@@ -128,9 +128,7 @@ public class DeviceCollection
     public DeviceActuator? GetActuatorByHash(ActuatorHash hash)
     {
         var enumerable = Actuators;
-        // Guard against empty list
-        if (!enumerable.Any())
-            return null;
-        return Actuators.FirstOrDefault(actuator => actuator.Hash == hash);
+        // Guard against empty list because FirstOrDefault will throw an exception if the list is empty.
+        return !enumerable.Any() ? null : Actuators.FirstOrDefault(actuator => actuator.Hash == hash);
     }
 }

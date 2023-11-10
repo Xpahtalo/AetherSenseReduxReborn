@@ -5,6 +5,7 @@ using Dalamud.Interface.Windowing;
 
 namespace AethersenseReduxReborn.UserInterface;
 
+[SuppressMessage("ReSharper", "UnusedMethodReturnValue.Global")]
 public sealed class WindowManager: IDisposable
 {
     private readonly WindowSystem _windowSystem = new("Aethersense Redux Reborn");

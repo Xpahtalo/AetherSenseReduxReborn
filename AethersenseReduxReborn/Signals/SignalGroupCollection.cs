@@ -9,31 +9,32 @@ namespace AethersenseReduxReborn.Signals;
 
 public sealed class SignalGroupCollection: IDisposable
 {
-    private readonly List<SignalGroup> _signalGroups = new();
+    private List<SignalGroup> SignalGroups { get; } = new();
 
-    private readonly ButtplugWrapper _buttplugWrapper;
+    private ButtplugWrapper ButtplugWrapper { get; }
 
     public SignalGroupCollection(IEnumerable<SignalGroupConfiguration> groupConfigurations, ButtplugWrapper buttplugWrapper)
     {
-        _buttplugWrapper = buttplugWrapper;
+        ButtplugWrapper = buttplugWrapper;
 
         foreach (var groupConfiguration in groupConfigurations){
             AddSignalGroup(groupConfiguration);
         }
 
-        _buttplugWrapper.ActuatorConnected    += ActuatorConnected;
-        _buttplugWrapper.ActuatorDisconnected += ActuatorDisconnected;
+        ButtplugWrapper.ActuatorConnected    += ActuatorConnected;
+        ButtplugWrapper.ActuatorDisconnected += ActuatorDisconnected;
     }
 
     private void AddSignalGroup(SignalGroupConfiguration groupConfiguration)
     {
         Service.PluginLog.Debug("Applying new Signal Group. Name: {0}, CombineType: {1}, HashOfLastAssignedActuator: {2}", groupConfiguration.Name, groupConfiguration.CombineType, groupConfiguration.HashOfLastAssignedActuator);
         var signalGroup = new SignalGroup(groupConfiguration);
-        _signalGroups.Add(signalGroup);
+        SignalGroups.Add(signalGroup);
 
         if (signalGroup.HashOfLastAssignedActuator != ActuatorHash.Zeroed
-         && _buttplugWrapper.IsActuatorConnected(signalGroup.HashOfLastAssignedActuator))
+         && ButtplugWrapper.IsActuatorConnected(signalGroup.HashOfLastAssignedActuator)){
             signalGroup.Enable();
+        }
     }
 
     /// <summary>
@@ -43,11 +44,12 @@ public sealed class SignalGroupCollection: IDisposable
     /// <param name="frameworkDelta">The number of milliseconds since the last update.</param>
     public void UpdateSignalGroups(double frameworkDelta)
     {
-        if (_buttplugWrapper.Connected == false)
+        if (ButtplugWrapper.Connected == false){
             return;
+        }
 
         var enabledSignalGroups =
-            from signalGroup in _signalGroups
+            from signalGroup in SignalGroups
             where signalGroup.Enabled
             where signalGroup.HashOfAssignedActuator != ActuatorHash.Zeroed
             select signalGroup;
@@ -55,7 +57,7 @@ public sealed class SignalGroupCollection: IDisposable
         foreach (var signalGroup in enabledSignalGroups){
             try{
                 signalGroup.UpdateSources(frameworkDelta);
-                _buttplugWrapper.SendCommandToActuator(signalGroup.HashOfAssignedActuator, new ActuatorCommand(signalGroup.Signal));
+                ButtplugWrapper.SendCommandToActuator(signalGroup.HashOfAssignedActuator, new ActuatorCommand(signalGroup.Signal));
             } catch (Exception e){
                 switch (e){
                     case KeyNotFoundException:
@@ -69,13 +71,13 @@ public sealed class SignalGroupCollection: IDisposable
             }
         }
 
-        foreach (var signalGroup in _signalGroups.Where(signalGroup => signalGroup.Enabled)){
+        foreach (var signalGroup in SignalGroups.Where(signalGroup => signalGroup.Enabled)){
             signalGroup.UpdateSources(frameworkDelta);
         }
     }
 
     public IEnumerable<SignalGroupConfiguration> CreateConfig() =>
-        from signalGroup in _signalGroups
+        from signalGroup in SignalGroups
         select signalGroup.CreateConfiguration();
 
     /// <summary>
@@ -87,7 +89,7 @@ public sealed class SignalGroupCollection: IDisposable
     {
         Service.PluginLog.Debug("Actuator with hash {0} connected. Scanning for SignalGroups to enable.", args.HashOfActuator);
         var groupsToEnable =
-            from signalGroup in _signalGroups
+            from signalGroup in SignalGroups
             where signalGroup.HashOfLastAssignedActuator == args.HashOfActuator
             select signalGroup;
         foreach (var group in groupsToEnable){
@@ -104,7 +106,7 @@ public sealed class SignalGroupCollection: IDisposable
     {
         Service.PluginLog.Debug("Actuator with hash {0} disconnected. Scanning for SignalGroups to disable.", args.HashOfActuator);
         var groupsToDisable =
-            from signalGroup in _signalGroups
+            from signalGroup in SignalGroups
             where signalGroup.HashOfAssignedActuator == args.HashOfActuator
             select signalGroup;
         foreach (var group in groupsToDisable){
@@ -114,16 +116,16 @@ public sealed class SignalGroupCollection: IDisposable
 
     private void Clear()
     {
-        foreach (var signalGroup in _signalGroups){
+        foreach (var signalGroup in SignalGroups){
             signalGroup.Dispose();
         }
-        _signalGroups.Clear();
+        SignalGroups.Clear();
     }
 
     public void Dispose()
     {
-        _buttplugWrapper.ActuatorConnected    -= ActuatorConnected;
-        _buttplugWrapper.ActuatorDisconnected -= ActuatorDisconnected;
+        ButtplugWrapper.ActuatorConnected    -= ActuatorConnected;
+        ButtplugWrapper.ActuatorDisconnected -= ActuatorDisconnected;
         Clear();
     }
 }

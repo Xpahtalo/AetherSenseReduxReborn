@@ -1,6 +1,8 @@
-﻿namespace AethersenseReduxReborn.DalamudUtilities;
+﻿using System.Diagnostics.CodeAnalysis;
 
-public enum Job : uint
+namespace AethersenseReduxReborn.DalamudUtilities;
+
+public enum Job: uint
 {
     Unknown       = 0,
     Gladiator     = 1,
@@ -47,11 +49,14 @@ public enum Job : uint
     NewJob2       = 42,
 }
 
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+[SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
 public static class JobExtensions
 {
+    public static uint DefinedJobCount => 43;
+
     public static bool IsDiscipleOfTheLand(this Job job) =>
-        job switch
-        {
+        job switch {
             Job.Miner    => true,
             Job.Botanist => true,
             Job.Fisher   => true,
@@ -59,8 +64,7 @@ public static class JobExtensions
         };
 
     public static bool IsDiscipleOfTheHand(this Job job) =>
-        job switch
-        {
+        job switch {
             Job.Carpenter     => true,
             Job.Blacksmith    => true,
             Job.Armorer       => true,
@@ -82,7 +86,7 @@ public static class JobExtensions
             Job.Gunbreaker => true,
             _              => false,
         };
-    
+
     public static bool IsHealer(this Job job) =>
         job switch {
             Job.Conjurer    => true,
@@ -105,7 +109,7 @@ public static class JobExtensions
             Job.Reaper   => true,
             _            => false,
         };
-    
+
     public static bool IsPhysicalRangedDps(this Job job) =>
         job switch {
             Job.Archer    => true,
@@ -127,15 +131,15 @@ public static class JobExtensions
         };
 
     public static bool IsDps(this Job job) => job.IsMeleeDps() || job.IsPhysicalRangedDps() || job.IsMagicalRangedDps();
-    
+
     public static bool IsPhysicalDps(this Job job) => job.IsMeleeDps() || job.IsPhysicalRangedDps();
-    
+
     public static bool IsDiscipleOfWar(this Job job) => job.IsTank() || job.IsMeleeDps() || job.IsPhysicalRangedDps();
-    
+
     public static bool IsDiscipleOfMagic(this Job job) => job.IsHealer() || job.IsMagicalRangedDps();
-    
+
     public static bool IsDiscipleOfWarOrMagic(this Job job) => job.IsDiscipleOfWar() || job.IsDiscipleOfMagic();
-    
+
     public static bool IsDiscipleOfTheHandOrLand(this Job job) => job.IsDiscipleOfTheHand() || job.IsDiscipleOfTheLand();
 
     public static bool IsJob(this Job job) =>
@@ -170,11 +174,4 @@ public static class JobExtensions
             Job.BlueMage => true,
             _            => false,
         };
-
-    public static Job ToJob(this uint? jobId)
-    {
-        if (jobId is null) return Job.Unknown;
-        if (typeof(Job).IsEnumDefined(jobId)) return (Job)jobId;
-        return Job.Unknown;
-    }
 }

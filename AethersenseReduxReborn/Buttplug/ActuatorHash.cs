@@ -44,7 +44,7 @@ public record ActuatorHash: Md5Hash
 
 public class ActuatorHashConverter: JsonConverter<ActuatorHash>
 {
-    public override ActuatorHash? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => new(reader.GetBytesFromBase64().ToImmutableArray());
+    public override ActuatorHash Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => new(reader.GetBytesFromBase64().ToImmutableArray());
 
     public override void Write(Utf8JsonWriter writer, ActuatorHash value, JsonSerializerOptions options) { writer.WriteBase64StringValue(value.Value.ToArray()); }
 }

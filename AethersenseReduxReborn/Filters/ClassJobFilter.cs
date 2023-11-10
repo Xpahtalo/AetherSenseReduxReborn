@@ -5,17 +5,15 @@ namespace AethersenseReduxReborn.Filters;
 
 public class ClassJobFilter: IFilter
 {
-    public ClassJobFilterOptions Options { get; private set; }  
-    
-    public ClassJobFilter(ClassJobFilterOptions options)
-    {
-        Options = options;
-    }
-    
+    public ClassJobFilterOptions Options { get; }
+
+    public ClassJobFilter(ClassJobFilterOptions options) { Options = options; }
+
     public bool Passes(GameObject gameObject)
     {
-        if(gameObject is not Character character)
+        if (gameObject is not Character character){
             return false;
+        }
 
         return Options switch {
             ClassJobFilterOptions.DisciplesOfWar           => character.Job().IsDiscipleOfWar(),
@@ -69,5 +67,4 @@ public static class ClassJobFilterOptionsExtensions
             ClassJobFilterOptions.Job                      => "Job",
             _                                              => "Unknown",
         };
-    
 }
